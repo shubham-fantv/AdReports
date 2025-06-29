@@ -1,7 +1,5 @@
-// app/graphs/page.jsx (or pages/graphs.js for Pages Router)
-
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Line } from "react-chartjs-2";
 import {
@@ -14,6 +12,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { subDays, format, parseISO } from "date-fns";
 
 ChartJS.register(
   LineElement,
@@ -30,6 +29,73 @@ export default function GraphsPage() {
   const [endDate, setEndDate] = useState("2025-05-10");
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const dayMap = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  useEffect(() => {
+    fetchDefaultChart();
+  }, []);
+
+  const fetchDefaultChart = async () => {
+    setLoading(true);
+
+    const end = new Date();
+    const start = subDays(end, 27);
+    const startStr = format(start, "yyyy-MM-dd");
+    const endStr = format(end, "yyyy-MM-dd");
+
+    try {
+      const res = await axios.get(
+        `/api/custom?start=${startStr}&end=${endStr}`
+      );
+      const campaigns = res.data.data || [];
+
+      // Map spends per date
+      const dailySpendMap = {};
+      campaigns.forEach((item) => {
+        const date = item.date_start;
+        if (!dailySpendMap[date]) {
+          dailySpendMap[date] = 0;
+        }
+        dailySpendMap[date] += parseFloat(item.spend || 0);
+      });
+
+      // Split into 4 weeks
+      const weekLabels = ["Week 1", "Week 2", "Week 3", "Week 4"];
+      const weeks = [[], [], [], []];
+      let i = 0;
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const iso = format(d, "yyyy-MM-dd");
+        const dayLabel = dayMap[d.getDay()];
+        const weekIndex = Math.floor(i / 7);
+        weeks[weekIndex].push({
+          day: dayLabel,
+          spend: dailySpendMap[iso] || 0,
+        });
+        i++;
+      }
+
+      // Construct chart datasets
+      const datasets = weeks.map((week, idx) => ({
+        label: weekLabels[idx],
+        data: week.map((d) => d.spend),
+        borderColor: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][idx],
+        fill: false,
+        tension: 0.4,
+      }));
+
+      const labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+      setChartData({
+        labels,
+        datasets,
+      });
+    } catch (err) {
+      console.error("Chart fetch error:", err);
+    }
+
+    setLoading(false);
+  };
 
   const fetchGraphData = async () => {
     setLoading(true);
