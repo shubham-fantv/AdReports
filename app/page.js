@@ -34,6 +34,45 @@ export default function Home() {
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const calculateCustomOverview = (campaigns) => {
+    if (!campaigns.length) return null;
+
+    const totalSpend = campaigns.reduce(
+      (sum, c) => sum + parseFloat(c.spend || 0),
+      0
+    );
+    const totalImpressions = campaigns.reduce(
+      (sum, c) => sum + parseInt(c.impressions || 0),
+      0
+    );
+    const totalClicks = campaigns.reduce(
+      (sum, c) => sum + parseInt(c.clicks || 0),
+      0
+    );
+    const totalReach = campaigns.reduce(
+      (sum, c) => sum + parseInt(c.reach || 0),
+      0
+    );
+
+    const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0;
+    const averageCPM =
+      totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
+    const averageCTR =
+      totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+    const frequency = totalReach > 0 ? totalImpressions / totalReach : 0;
+
+    return {
+      total_spend: totalSpend,
+      total_impressions: totalImpressions,
+      total_clicks: totalClicks,
+      total_reach: totalReach,
+      average_cpc: averageCPC,
+      average_cpm: averageCPM,
+      average_ctr: averageCTR,
+      frequency: frequency,
+    };
+  };
+
   const fetchPresetData = async () => {
     setLoading(true);
     const res = await fetch(`/api/dashboard?date_preset=${presetDate}`);
@@ -48,8 +87,10 @@ export default function Home() {
     setLoading(true);
     const res = await fetch(`/api/custom?start=${startDate}&end=${endDate}`);
     const json = await res.json();
-    setOverview(null);
-    setTableData(json?.data || []);
+    const data = json?.data || [];
+
+    setTableData(data);
+    setOverview(calculateCustomOverview(data));
     setLoading(false);
   };
 
@@ -175,7 +216,9 @@ export default function Home() {
                     {key.replace(/_/g, " ")}
                   </h2>
                   <p className="text-lg font-semibold">
-                    {parseFloat(val).toFixed(2)}
+                    {key == "average_ctr" || key == "frequency"
+                      ? Math.round(val * 100) / 100
+                      : Math.round(val)}
                   </p>
                 </div>
               ))}
@@ -189,6 +232,7 @@ export default function Home() {
               <table className="w-full table-auto border border-gray-200 text-center">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-4 py-2">Campaign</th>
                     <th className="px-4 py-2">Date</th>
                     <th className="px-4 py-2">Spend</th>
                     <th className="px-4 py-2">Impressions</th>
@@ -204,7 +248,12 @@ export default function Home() {
                   {tableData.map((item, idx) => (
                     <tr key={idx} className="border-t text-sm text-gray-700">
                       <td className="px-4 py-2">
-                        {item.date_start || item.date}
+                        {item.campaign_name || "N/A"}
+                      </td>
+                      <td className="px-4 py-2">
+                        {item.date_start !== item.date_stop
+                          ? `${item.date_start} → ${item.date_stop}`
+                          : item.date_start || item.date}
                       </td>
                       <td className="px-4 py-2">{Math.round(item.spend)}</td>
                       <td className="px-4 py-2">{item.impressions}</td>

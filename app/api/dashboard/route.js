@@ -6,7 +6,7 @@ export async function GET(req) {
 
   try {
     const { data } = await axios.get(
-      `http://api.videonation.xyz/api/v1/facebook-ads/dashboard`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/facebook-ads/dashboard`,
       {
         params: {
           date_preset: datePreset,
