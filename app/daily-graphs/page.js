@@ -33,6 +33,7 @@ export default function DailyGraphs() {
   const [activeRange, setActiveRange] = useState("last3");
   const [analysis, setAnalysis] = useState("");
   const [analyzingData, setAnalyzingData] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState("default");
 
   const getActionValue = (actions, actionType) => {
     if (!actions || !Array.isArray(actions)) return 0;
@@ -116,7 +117,8 @@ export default function DailyGraphs() {
       const allPromises = dateArray.map(date => {
         const params = new URLSearchParams({
           selected_date: date,
-          per_day: "true"
+          per_day: "true",
+          account: selectedAccount
         });
         return fetch(`/api/daily-reports?${params}`).then(res => res.json());
       });
@@ -151,7 +153,7 @@ export default function DailyGraphs() {
     if (dailyStartDate && dailyEndDate) {
       fetchDailyData();
     }
-  }, [dailyStartDate, dailyEndDate]);
+  }, [dailyStartDate, dailyEndDate, selectedAccount]);
 
   const generateChartData = (metric, label, color) => {
     const labels = chartData.map(item => item.date_start);
@@ -215,6 +217,25 @@ export default function DailyGraphs() {
         >
           ← Back to Dashboard
         </button>
+      </div>
+
+      {/* Account Selection */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Select Facebook Ad Account
+        </label>
+        <select
+          value={selectedAccount}
+          onChange={(e) => {
+            setSelectedAccount(e.target.value);
+            setChartData([]);
+            setAnalysis("");
+          }}
+          className="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+        >
+          <option value="default">Videonation</option>
+          <option value="mms">MMS Account</option>
+        </select>
       </div>
 
       {/* Date Range Controls */}

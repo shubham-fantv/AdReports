@@ -41,6 +41,7 @@ export default function Home() {
   const [dailyEndDate, setDailyEndDate] = useState("");
   const [activeDailyRange, setActiveDailyRange] = useState("last7");
   const [aggregateData, setAggregateData] = useState(null);
+  const [selectedAccount, setSelectedAccount] = useState("default");
 
   const [overview, setOverview] = useState(null);
   const [tableData, setTableData] = useState([]);
@@ -106,58 +107,109 @@ export default function Home() {
     const csvData = [];
     
     // Add header row
-    csvData.push([
-      "Date",
-      "Spend (INR)",
-      "Impressions",
-      "Clicks",
-      "Reach",
-      "CPC",
-      "CPM",
-      "CTR",
-      "Frequency",
-      "Add to Cart",
-      "Purchase",
-      "Initiate Checkout",
-      "Complete Registration"
-    ]);
+    if (selectedAccount === "mms") {
+      csvData.push([
+        "Date",
+        "Spend (INR)",
+        "Impressions",
+        "Clicks",
+        "Reach",
+        "CPC",
+        "CPM",
+        "CTR",
+        "Frequency",
+        "Mobile App Install",
+        "Purchase",
+        "Complete Registration"
+      ]);
+    } else {
+      csvData.push([
+        "Date",
+        "Spend (INR)",
+        "Impressions",
+        "Clicks",
+        "Reach",
+        "CPC",
+        "CPM",
+        "CTR",
+        "Frequency",
+        "Add to Cart",
+        "Purchase",
+        "Initiate Checkout",
+        "Complete Registration"
+      ]);
+    }
 
     // Add daily data rows
     tableData.forEach(item => {
-      csvData.push([
-        item.date_start || item.date,
-        Math.round(item.spend || 0),
-        item.impressions || 0,
-        item.clicks || 0,
-        item.reach || 0,
-        Math.round(item.cpc || 0),
-        Math.round(item.cpm || 0),
-        parseFloat(item.ctr || 0).toFixed(2),
-        Math.round((item.frequency || 0) * 100) / 100,
-        getActionValue(item.actions, "add_to_cart"),
-        getActionValue(item.actions, "purchase"),
-        getActionValue(item.actions, "initiate_checkout"),
-        getActionValue(item.actions, "complete_registration")
-      ]);
+      if (selectedAccount === "mms") {
+        csvData.push([
+          item.date_start || item.date,
+          Math.round(item.spend || 0),
+          item.impressions || 0,
+          item.clicks || 0,
+          item.reach || 0,
+          Math.round(item.cpc || 0),
+          Math.round(item.cpm || 0),
+          parseFloat(item.ctr || 0).toFixed(2),
+          Math.round((item.frequency || 0) * 100) / 100,
+          getActionValue(item.actions, "mobile_app_install"),
+          getActionValue(item.actions, "purchase"),
+          getActionValue(item.actions, "complete_registration")
+        ]);
+      } else {
+        csvData.push([
+          item.date_start || item.date,
+          Math.round(item.spend || 0),
+          item.impressions || 0,
+          item.clicks || 0,
+          item.reach || 0,
+          Math.round(item.cpc || 0),
+          Math.round(item.cpm || 0),
+          parseFloat(item.ctr || 0).toFixed(2),
+          Math.round((item.frequency || 0) * 100) / 100,
+          getActionValue(item.actions, "add_to_cart"),
+          getActionValue(item.actions, "purchase"),
+          getActionValue(item.actions, "initiate_checkout"),
+          getActionValue(item.actions, "complete_registration")
+        ]);
+      }
     });
 
     // Add aggregate/total row if available
     if (aggregateData) {
-      csvData.push([
-        `TOTAL (${dailyStartDate} to ${dailyEndDate})`,
-        Math.round(aggregateData.spend || 0),
-        aggregateData.impressions || 0,
-        aggregateData.clicks || 0,
-        aggregateData.reach || 0,
-        Math.round(aggregateData.cpc || 0),
-        Math.round(aggregateData.cpm || 0),
-        parseFloat(aggregateData.ctr || 0).toFixed(2),
-        Math.round((aggregateData.frequency || 0) * 100) / 100,
-        getActionValue(aggregateData.actions, "add_to_cart"),
-        getActionValue(aggregateData.actions, "purchase"),
-        getActionValue(aggregateData.actions, "initiate_checkout"),
-        getActionValue(aggregateData.actions, "complete_registration")
-      ]);
+      if (selectedAccount === "mms") {
+        csvData.push([
+          `TOTAL (${dailyStartDate} to ${dailyEndDate})`,
+          Math.round(aggregateData.spend || 0),
+          aggregateData.impressions || 0,
+          aggregateData.clicks || 0,
+          aggregateData.reach || 0,
+          Math.round(aggregateData.cpc || 0),
+          Math.round(aggregateData.cpm || 0),
+          parseFloat(aggregateData.ctr || 0).toFixed(2),
+          Math.round((aggregateData.frequency || 0) * 100) / 100,
+          getActionValue(aggregateData.actions, "mobile_app_install"),
+          getActionValue(aggregateData.actions, "purchase"),
+          getActionValue(aggregateData.actions, "complete_registration")
+        ]);
+      } else {
+        csvData.push([
+          `TOTAL (${dailyStartDate} to ${dailyEndDate})`,
+          Math.round(aggregateData.spend || 0),
+          aggregateData.impressions || 0,
+          aggregateData.clicks || 0,
+          aggregateData.reach || 0,
+          Math.round(aggregateData.cpc || 0),
+          Math.round(aggregateData.cpm || 0),
+          parseFloat(aggregateData.ctr || 0).toFixed(2),
+          Math.round((aggregateData.frequency || 0) * 100) / 100,
+          getActionValue(aggregateData.actions, "add_to_cart"),
+          getActionValue(aggregateData.actions, "purchase"),
+          getActionValue(aggregateData.actions, "initiate_checkout"),
+          getActionValue(aggregateData.actions, "complete_registration")
+        ]);
+      }
     }
 
     // Convert to CSV string
@@ -221,6 +273,7 @@ export default function Home() {
     const endpoint = mode === "daily" ? "/api/daily-reports" : "/api/dashboard";
     const params = new URLSearchParams({
       date_preset: presetDate,
+      account: selectedAccount,
       ...(mode === "daily" && { per_day: perDay.toString() })
     });
     const res = await fetch(`${endpoint}?${params}`);
@@ -248,7 +301,8 @@ export default function Home() {
       const allPromises = dateArray.map(date => {
         const params = new URLSearchParams({
           selected_date: date,
-          per_day: "true"
+          per_day: "true",
+          account: selectedAccount
         });
         return fetch(`/api/daily-reports?${params}`).then(res => res.json());
       });
@@ -257,7 +311,8 @@ export default function Home() {
       const aggregateParams = new URLSearchParams({
         start_date: dailyStartDate,
         end_date: dailyEndDate,
-        per_day: "false"
+        per_day: "false",
+        account: selectedAccount
       });
       const aggregatePromise = fetch(`/api/daily-reports?${aggregateParams}`).then(res => res.json());
       
@@ -328,7 +383,7 @@ export default function Home() {
 
   const fetchCustomData = async () => {
     setLoading(true);
-    const res = await fetch(`/api/custom?start=${startDate}&end=${endDate}`);
+    const res = await fetch(`/api/custom?start=${startDate}&end=${endDate}&account=${selectedAccount}`);
     const json = await res.json();
     const data = json?.data || [];
 
@@ -455,6 +510,27 @@ export default function Home() {
         >
           Logout
         </button>
+      </div>
+
+      {/* Account Selection */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Select Facebook Ad Account
+        </label>
+        <select
+          value={selectedAccount}
+          onChange={(e) => {
+            setSelectedAccount(e.target.value);
+            // Clear data when switching accounts
+            setTableData([]);
+            setOverview(null);
+            setAggregateData(null);
+          }}
+          className="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+        >
+          <option value="default">Videonation</option>
+          <option value="mms">MMS Account</option>
+        </select>
       </div>
 
       {/* Toggle Mode */}
@@ -701,10 +777,20 @@ export default function Home() {
                     <th className="px-4 py-2">CPM</th>
                     <th className="px-4 py-2">CTR</th>
                     <th className="px-4 py-2">Frequency</th>
-                    <th className="px-4 py-2">Add to Cart</th>
-                    <th className="px-4 py-2">Purchase</th>
-                    <th className="px-4 py-2">Initiate Checkout</th>
-                    <th className="px-4 py-2">Complete Registration</th>
+                    {selectedAccount === "mms" ? (
+                      <>
+                        <th className="px-4 py-2">Mobile App Install</th>
+                        <th className="px-4 py-2">Purchase</th>
+                        <th className="px-4 py-2">Complete Registration</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="px-4 py-2">Add to Cart</th>
+                        <th className="px-4 py-2">Purchase</th>
+                        <th className="px-4 py-2">Initiate Checkout</th>
+                        <th className="px-4 py-2">Complete Registration</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -725,18 +811,34 @@ export default function Home() {
                       <td className="px-4 py-2">
                         {Math.round(item.frequency * 100) / 100}
                       </td>
-                      <td className="px-4 py-2">
-                        {getActionValue(item.actions, "add_to_cart")}
-                      </td>
-                      <td className="px-4 py-2">
-                        {getActionValue(item.actions, "purchase")}
-                      </td>
-                      <td className="px-4 py-2">
-                        {getActionValue(item.actions, "initiate_checkout")}
-                      </td>
-                      <td className="px-4 py-2">
-                        {getActionValue(item.actions, "complete_registration")}
-                      </td>
+                      {selectedAccount === "mms" ? (
+                        <>
+                          <td className="px-4 py-2">
+                            {getActionValue(item.actions, "mobile_app_install")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(item.actions, "purchase")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(item.actions, "complete_registration")}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-2">
+                            {getActionValue(item.actions, "add_to_cart")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(item.actions, "purchase")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(item.actions, "initiate_checkout")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(item.actions, "complete_registration")}
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                   
@@ -759,18 +861,34 @@ export default function Home() {
                       <td className="px-4 py-2">
                         {Math.round(aggregateData.frequency * 100) / 100}
                       </td>
-                      <td className="px-4 py-2">
-                        {getActionValue(aggregateData.actions, "add_to_cart")}
-                      </td>
-                      <td className="px-4 py-2">
-                        {getActionValue(aggregateData.actions, "purchase")}
-                      </td>
-                      <td className="px-4 py-2">
-                        {getActionValue(aggregateData.actions, "initiate_checkout")}
-                      </td>
-                      <td className="px-4 py-2">
-                        {getActionValue(aggregateData.actions, "complete_registration")}
-                      </td>
+                      {selectedAccount === "mms" ? (
+                        <>
+                          <td className="px-4 py-2">
+                            {getActionValue(aggregateData.actions, "mobile_app_install")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(aggregateData.actions, "purchase")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(aggregateData.actions, "complete_registration")}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-2">
+                            {getActionValue(aggregateData.actions, "add_to_cart")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(aggregateData.actions, "purchase")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(aggregateData.actions, "initiate_checkout")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {getActionValue(aggregateData.actions, "complete_registration")}
+                          </td>
+                        </>
+                      )}
                     </tr>
                   )}
                 </tbody>

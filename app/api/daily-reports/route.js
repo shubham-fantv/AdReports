@@ -40,6 +40,26 @@ export async function GET(req) {
   const startDate = searchParams.get("start_date");
   const endDate = searchParams.get("end_date");
   const perDay = searchParams.get("per_day") === "true";
+  const account = searchParams.get("account") || "default";
+  
+  // Select credentials based on account
+  const accessToken = account === "mms" 
+    ? process.env.FACEBOOK_MMS_ACCESS_TOKEN 
+    : process.env.FACEBOOK_ACCESS_TOKEN_VIDEONATION;
+  const adAccountId = account === "mms" 
+    ? `act_${process.env.FACEBOOK_MMS_AD_ACCOUNT_ID}`
+    : process.env.FACEBOOK_AD_ACCOUNT_ID_VIDEONATION;
+  
+  // Validate credentials exist
+  if (!accessToken || !adAccountId) {
+    const accountType = account === "mms" ? "MMS" : "VideoNation";
+    return new Response(
+      JSON.stringify({ 
+        error: `Missing ${accountType} credentials. Please check environment variables.` 
+      }),
+      { status: 500 }
+    );
+  }
   
   let since, until;
   
@@ -60,7 +80,6 @@ export async function GET(req) {
   
   try {
     const params = new URLSearchParams({
-      access_token: process.env.FACEBOOK_ACCESS_TOKEN,
       fields: "ad_name,ad_id,impressions,clicks,cpc,cpm,ctr,spend,actions",
       level: "ad",
       time_range: JSON.stringify({ since, until }),
@@ -72,7 +91,7 @@ export async function GET(req) {
     }
 
     const { data } = await axios.get(
-      `https://graph.facebook.com/v19.0/act_1839845276867376/insights?${params.toString()}`
+      `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=${accessToken}&${params.toString()}`
     );
 
     let processedCampaigns = data.data || [];
@@ -113,9 +132,14 @@ export async function GET(req) {
         dailyData[date].clicks += parseInt(item.clicks || 0);
         dailyData[date].spend += parseFloat(item.spend || 0);
         
-        // Combine actions
+        // Combine actions (filter out specific actions for MMS)
         if (item.actions) {
           item.actions.forEach(action => {
+            // For MMS account: skip add_to_cart and initiate_checkout only
+            if (account === "mms" && (action.action_type === "add_to_cart" || action.action_type === "initiate_checkout")) {
+              return;
+            }
+            
             const existingAction = dailyData[date].actions.find(a => a.action_type === action.action_type);
             if (existingAction) {
               existingAction.value = (parseInt(existingAction.value) + parseInt(action.value)).toString();
@@ -138,65 +162,38 @@ export async function GET(req) {
         }))
         .sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
     } else {
-      // Aggregate everything into one total when per_day is false
-      const totalData = {
+      // Make a separate API call for account-level aggregate data
+      const aggregateParams = new URLSearchParams({
+        fields: "impressions,clicks,cpc,cpm,ctr,spend,actions",
+        level: "account",
+        time_range: JSON.stringify({ since, until }),
+        action_breakdowns: "action_type"
+      });
+
+      const { data: aggregateData } = await axios.get(
+        `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=${accessToken}&${aggregateParams.toString()}`
+      );
+
+      processedCampaigns = aggregateData.data || [];
+      
+      // Filter actions for MMS account
+      if (account === "mms") {
+        processedCampaigns = processedCampaigns.map(campaign => ({
+          ...campaign,
+          actions: campaign.actions ? campaign.actions.filter(action => 
+            action.action_type !== "add_to_cart" && action.action_type !== "initiate_checkout"
+          ) : []
+        }));
+      }
+      
+      // Add display fields for account-level data
+      processedCampaigns = processedCampaigns.map((item) => ({
+        ...item,
         campaign_name: `Total (${since} to ${until})`,
         date_start: since,
         date_stop: until,
-        date: since,
-        impressions: 0,
-        clicks: 0,
-        spend: 0,
-        ctr: 0,
-        cpc: 0,
-        cpm: 0,
-        reach: 0,
-        frequency: 1,
-        actions: []
-      };
-      
-      let totalCtrWeighted = 0;
-      let totalCpcWeighted = 0;
-      let totalCpmWeighted = 0;
-      
-      processedCampaigns.forEach(item => {
-        const impressions = parseInt(item.impressions || 0);
-        const clicks = parseInt(item.clicks || 0);
-        const spend = parseFloat(item.spend || 0);
-        
-        totalData.impressions += impressions;
-        totalData.clicks += clicks;
-        totalData.spend += spend;
-        totalData.reach += parseInt(item.reach || impressions);
-        
-        // Calculate weighted averages using Facebook's values
-        totalCtrWeighted += parseFloat(item.ctr || 0) * impressions;
-        totalCpcWeighted += parseFloat(item.cpc || 0) * clicks;
-        totalCpmWeighted += parseFloat(item.cpm || 0) * impressions;
-        
-        // Combine actions
-        if (item.actions) {
-          item.actions.forEach(action => {
-            const existingAction = totalData.actions.find(a => a.action_type === action.action_type);
-            if (existingAction) {
-              existingAction.value = (parseInt(existingAction.value) + parseInt(action.value)).toString();
-            } else {
-              totalData.actions.push({ ...action });
-            }
-          });
-        }
-      });
-      
-      // Calculate weighted averages from Facebook's values
-      if (totalData.impressions > 0) {
-        totalData.ctr = totalCtrWeighted / totalData.impressions;
-        totalData.cpm = totalCpmWeighted / totalData.impressions;
-      }
-      if (totalData.clicks > 0) {
-        totalData.cpc = totalCpcWeighted / totalData.clicks;
-      }
-      
-      processedCampaigns = [totalData];
+        date: since
+      }));
     }
 
     const processedData = {
@@ -213,9 +210,23 @@ export async function GET(req) {
       },
     });
   } catch (error) {
-    console.error("Error fetching daily reports data:", error.message);
+    const accountType = account === "mms" ? "MMS" : "VideoNation";
+    console.error(`Error fetching ${accountType} daily reports data:`, error.message);
+    
+    // Check if it's an authentication error
+    if (error.response?.status === 401 || error.message.includes('Invalid access token')) {
+      return new Response(
+        JSON.stringify({ 
+          error: `${accountType} access token is invalid or expired. Please check credentials.` 
+        }),
+        { status: 401 }
+      );
+    }
+    
     return new Response(
-      JSON.stringify({ error: "Failed to fetch daily reports data" }),
+      JSON.stringify({ 
+        error: `Failed to fetch ${accountType} daily reports data: ${error.message}` 
+      }),
       { status: 500 }
     );
   }
