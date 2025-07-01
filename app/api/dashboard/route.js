@@ -5,6 +5,7 @@ export async function GET(req) {
   const datePreset = searchParams.get("date_preset") || "yesterday";
 
   try {
+    console.log("buddy", process.env.NEXT_PUBLIC_API_URL)
     const { data } = await axios.get(
       `${process.env.NEXT_PUBLIC_API_URL}/api/v1/facebook-ads/dashboard`,
       {
