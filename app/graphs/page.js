@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Line } from "react-chartjs-2";
 import ThemeToggle from '../components/ThemeToggle';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   Chart as ChartJS,
   LineElement,
@@ -26,6 +27,7 @@ ChartJS.register(
 );
 
 export default function GraphsPage() {
+  const { theme } = useTheme();
   const [startDate, setStartDate] = useState("2025-05-01");
   const [endDate, setEndDate] = useState("2025-05-10");
   const [chartData, setChartData] = useState(null);
@@ -225,10 +227,10 @@ export default function GraphsPage() {
         {loading && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-8 mb-8">
             <div className="flex items-center justify-center space-x-4">
-              <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               <div>
-                <p className="text-blue-700 dark:text-blue-400 font-semibold text-lg">Generating Chart</p>
-                <p className="text-blue-600 dark:text-blue-500 text-sm mt-1">Processing campaign data...</p>
+                <p className="text-blue-800 dark:text-blue-200 font-semibold text-lg">Generating Chart</p>
+                <p className="text-blue-700 dark:text-blue-300 text-sm mt-1">Processing campaign data...</p>
               </div>
             </div>
           </div>
@@ -265,6 +267,7 @@ export default function GraphsPage() {
                       labels: {
                         usePointStyle: true,
                         padding: 20,
+                        color: theme === 'dark' ? '#ffffff' : '#374151',
                         font: {
                           size: 14,
                           weight: '600'
@@ -272,10 +275,10 @@ export default function GraphsPage() {
                       }
                     },
                     tooltip: {
-                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                      titleColor: '#ffffff',
-                      bodyColor: '#ffffff',
-                      borderColor: '#3b82f6',
+                      backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                      titleColor: theme === 'dark' ? '#ffffff' : '#000000',
+                      bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
+                      borderColor: theme === 'dark' ? '#6b7280' : '#3b82f6',
                       borderWidth: 1,
                       cornerRadius: 8,
                       displayColors: true,
@@ -290,9 +293,10 @@ export default function GraphsPage() {
                     y: {
                       beginAtZero: true,
                       grid: {
-                        color: 'rgba(156, 163, 175, 0.2)',
+                        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
                       },
                       ticks: {
+                        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
                         callback: function(value) {
                           return '₹' + value.toLocaleString();
                         },
@@ -303,9 +307,10 @@ export default function GraphsPage() {
                     },
                     x: {
                       grid: {
-                        color: 'rgba(156, 163, 175, 0.2)',
+                        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
                       },
                       ticks: {
+                        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
                         font: {
                           size: 12
                         }

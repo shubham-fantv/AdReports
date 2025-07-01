@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Line, Bar } from "react-chartjs-2";
 import ThemeToggle from '../components/ThemeToggle';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,12 +27,13 @@ ChartJS.register(
 );
 
 export default function DailyGraphs() {
+  const { theme } = useTheme();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [dailyStartDate, setDailyStartDate] = useState("");
   const [dailyEndDate, setDailyEndDate] = useState("");
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeRange, setActiveRange] = useState("last3");
+  const [activeRange, setActiveRange] = useState("last7");
   const [analysis, setAnalysis] = useState("");
   const [analyzingData, setAnalyzingData] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState("default");
@@ -76,12 +78,19 @@ export default function DailyGraphs() {
     }
   }, []);
 
-  // Set default to last 3 days on component mount
+  // Set default to last 7 days on component mount
   useEffect(() => {
     if (isAuthenticated) {
-      setDateRange(3, "last3");
+      setDateRange(7, "last7");
     }
   }, [isAuthenticated]);
+
+  // Trigger data fetch when date range is set and we have both dates
+  useEffect(() => {
+    if (isAuthenticated && dailyStartDate && dailyEndDate) {
+      fetchDailyData();
+    }
+  }, [isAuthenticated, dailyStartDate, dailyEndDate]);
 
   const analyzeDataWithGemini = async (data) => {
     setAnalyzingData(true);
@@ -181,28 +190,67 @@ export default function DailyGraphs() {
     };
   };
 
-  const chartOptions = {
+  const getChartOptions = () => ({
     responsive: true,
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          color: theme === 'dark' ? '#ffffff' : '#374151',
+          font: {
+            size: 12,
+            weight: '600'
+          }
+        }
       },
       title: {
         display: true,
         text: 'Daily Performance Metrics',
+        color: theme === 'dark' ? '#ffffff' : '#374151',
+        font: {
+          size: 14,
+          weight: 'bold'
+        }
       },
+      tooltip: {
+        backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        titleColor: theme === 'dark' ? '#ffffff' : '#000000',
+        bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
+        borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+        borderWidth: 1
+      }
     },
     scales: {
       y: {
         beginAtZero: true,
+        grid: {
+          color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        },
+        ticks: {
+          color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+          font: {
+            size: 11
+          }
+        }
       },
+      x: {
+        grid: {
+          color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        },
+        ticks: {
+          color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+          font: {
+            size: 11
+          }
+        }
+      }
     },
-  };
+  });
 
   // Show loading while checking authentication
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
         <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -238,18 +286,13 @@ export default function DailyGraphs() {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
 
-        {/* Control Panel */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analytics Configuration</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">Configure data source and date ranges</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
+        {/* Analytics Filters and Controls */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-end gap-6">
+            
+            {/* Account Selection */}
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
                 Ad Account
               </label>
               <select
@@ -259,187 +302,134 @@ export default function DailyGraphs() {
                   setChartData([]);
                   setAnalysis("");
                 }}
-                className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-48 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="default">Videonation</option>
                 <option value="mms">MMS Account</option>
               </select>
             </div>
-          </div>
-        </div>
 
-        {/* Date Range Selector */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Date Range Selection</h3>
-          
-          {/* Quick Date Range Buttons */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
-              Quick Ranges
-            </label>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setDateRange(3, "last3")}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  activeRange === "last3" 
-                    ? "bg-blue-700 text-white shadow-lg" 
-                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-                }`}
-              >
-                Last 3 Days
-              </button>
-              <button
-                onClick={() => setDateRange(7, "last7")}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  activeRange === "last7" 
-                    ? "bg-blue-700 text-white shadow-lg" 
-                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-                }`}
-              >
-                Last 7 Days
-              </button>
-              <button
-                onClick={() => setDateRange(10, "last10")}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  activeRange === "last10" 
-                    ? "bg-blue-700 text-white shadow-lg" 
-                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-                }`}
-              >
-                Last 10 Days
-              </button>
-              <button
-                onClick={() => setDateRange(30, "last30")}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  activeRange === "last30" 
-                    ? "bg-blue-700 text-white shadow-lg" 
-                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-                }`}
-              >
-                Last 30 Days
-              </button>
-              <button
-                onClick={setThisMonth}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  activeRange === "thisMonth" 
-                    ? "bg-blue-700 text-white shadow-lg" 
-                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-                }`}
-              >
-                This Month
-              </button>
+            {/* Quick Date Range Buttons */}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                Quick Ranges
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {/* <button
+                  onClick={() => setDateRange(3, "last3")}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    activeRange === "last3" 
+                      ? "bg-blue-700 text-white shadow-lg" 
+                      : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  Last 3 Days
+                </button> */}
+                <button
+                  onClick={() => setDateRange(7, "last7")}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    activeRange === "last7" 
+                      ? "bg-blue-700 text-white shadow-lg" 
+                      : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  Last 7 Days
+                </button>
+                <button
+                  onClick={() => setDateRange(10, "last10")}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    activeRange === "last10" 
+                      ? "bg-blue-700 text-white shadow-lg" 
+                      : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  Last 10 Days
+                </button>
+                <button
+                  onClick={() => setDateRange(30, "last30")}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    activeRange === "last30" 
+                      ? "bg-blue-700 text-white shadow-lg" 
+                      : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  Last 30 Days
+                </button>
+                <button
+                  onClick={setThisMonth}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    activeRange === "thisMonth" 
+                      ? "bg-blue-700 text-white shadow-lg" 
+                      : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                  }`}
+                >
+                  This Month
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Custom Date Range */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={dailyStartDate}
-                onChange={(e) => setDailyStartDate(e.target.value)}
-                className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={dailyEndDate}
-                onChange={(e) => setDailyEndDate(e.target.value)}
-                className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={() => {
-                  fetchDailyData();
-                  setActiveRange("custom");
-                }}
-                className="w-full px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Update Charts
-              </button>
+            {/* Custom Date Range */}
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={dailyStartDate}
+                  onChange={(e) => setDailyStartDate(e.target.value)}
+                  className="w-36 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+                />
+              </div>
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={dailyEndDate}
+                  onChange={(e) => setDailyEndDate(e.target.value)}
+                  className="w-36 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+                />
+              </div>
+              <div className="flex-shrink-0">
+                <button
+                  onClick={() => {
+                    fetchDailyData();
+                    setActiveRange("custom");
+                  }}
+                  className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Update
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* AI Performance Insights */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mr-4">
-                <span className="text-white text-xl">🤖</span>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI Performance Insights</h2>
-                <p className="text-sm text-gray-700 dark:text-gray-200">Powered by Gemini AI analytics</p>
-              </div>
+        {/* AI Insight */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-sm">🤖</span>
             </div>
-            {analyzingData && (
-              <div className="flex items-center space-x-3 text-purple-600 dark:text-purple-400">
-                <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm font-medium">Analyzing...</span>
-              </div>
-            )}
-          </div>
-          
-          {analyzingData ? (
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800 p-8 text-center">
-              <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-purple-700 dark:text-purple-400 font-semibold text-lg">Analyzing Campaign Data</p>
-              <p className="text-purple-600 dark:text-purple-500 text-sm mt-1">AI is processing your performance metrics...</p>
-            </div>
-          ) : analysis ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {analysis.split('\n').filter(line => line.trim().startsWith('•')).map((insight, index) => {
-                const cleanText = insight.replace(/[•*]/g, '').replace(/\*\*(.*?)\*\*/g, '$1').trim();
-                const colors = [
-                  'from-blue-500 to-blue-600',
-                  'from-green-500 to-green-600', 
-                  'from-purple-500 to-purple-600',
-                  'from-orange-500 to-orange-600',
-                  'from-red-500 to-red-600'
-                ];
-                const icons = ['💰', '📈', '🎯', '⚡', '🚀'];
-                
-                return (
-                  <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
-                    <div className="flex items-center mb-4">
-                      <div className={`w-10 h-10 bg-gradient-to-r ${colors[index % colors.length]} rounded-xl flex items-center justify-center mr-3 text-white text-sm font-bold group-hover:scale-110 transition-transform duration-200`}>
-                        {index + 1}
-                      </div>
-                      <span className="text-2xl">{icons[index % icons.length]}</span>
-                    </div>
-                    <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed font-medium">
-                      {cleanText}
-                    </p>
-                  </div>
-                );
-              })}
-              
-              {analysis.split('\n').filter(line => line.trim().startsWith('•')).length === 0 && (
-                <div className="col-span-full bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-6">
-                  <div className="text-gray-800 dark:text-gray-200 leading-relaxed">
-                    {analysis.replace(/\*\*(.*?)\*\*/g, '$1')}
-                  </div>
+            <div className="flex-1 min-w-0">
+              {analyzingData ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">Analyzing...</span>
                 </div>
+              ) : analysis ? (
+                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                  <span className="text-purple-600 dark:text-purple-400 font-semibold">AI Insight:</span> {analysis.replace(/\*\*(.*?)\*\*/g, '$1').trim()}
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-purple-600 dark:text-purple-400 font-semibold">AI Ready:</span> Select date range for instant insights
+                </p>
               )}
             </div>
-          ) : (
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-8 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">📊</span>
-              </div>
-              <p className="text-gray-600 dark:text-gray-400 font-semibold">Ready to Analyze Performance</p>
-              <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Select a date range to get AI-powered insights on your campaigns</p>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Loading State */}
@@ -447,7 +437,7 @@ export default function DailyGraphs() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl">
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 <div>
                   <p className="text-gray-900 dark:text-white font-semibold">Loading Analytics</p>
                   <p className="text-gray-700 dark:text-gray-200 text-sm">Fetching performance data...</p>
@@ -472,11 +462,11 @@ export default function DailyGraphs() {
                 <Line
                   data={generateChartData('spend', 'Spend (₹)', '#3B82F6')}
                   options={{
-                    ...chartOptions,
+                    ...getChartOptions(),
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      ...chartOptions.plugins,
+                      ...getChartOptions().plugins,
                       legend: { display: false }
                     }
                   }}
@@ -496,11 +486,11 @@ export default function DailyGraphs() {
                 <Line
                   data={generateChartData('impressions', 'Impressions', '#10B981')}
                   options={{
-                    ...chartOptions,
+                    ...getChartOptions(),
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      ...chartOptions.plugins,
+                      ...getChartOptions().plugins,
                       legend: { display: false }
                     }
                   }}
@@ -520,11 +510,11 @@ export default function DailyGraphs() {
                 <Line
                   data={generateChartData('clicks', 'Clicks', '#F59E0B')}
                   options={{
-                    ...chartOptions,
+                    ...getChartOptions(),
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      ...chartOptions.plugins,
+                      ...getChartOptions().plugins,
                       legend: { display: false }
                     }
                   }}
@@ -544,11 +534,11 @@ export default function DailyGraphs() {
                 <Line
                   data={generateChartData('ctr', 'CTR (%)', '#EF4444')}
                   options={{
-                    ...chartOptions,
+                    ...getChartOptions(),
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      ...chartOptions.plugins,
+                      ...getChartOptions().plugins,
                       legend: { display: false }
                     }
                   }}
@@ -568,11 +558,11 @@ export default function DailyGraphs() {
                 <Bar
                   data={generateChartData('purchase', 'Purchases', '#8B5CF6')}
                   options={{
-                    ...chartOptions,
+                    ...getChartOptions(),
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      ...chartOptions.plugins,
+                      ...getChartOptions().plugins,
                       legend: { display: false }
                     }
                   }}
@@ -590,13 +580,13 @@ export default function DailyGraphs() {
               </div>
               <div className="h-64">
                 <Bar
-                  data={generateChartData('add_to_cart', 'Add to Cart', '#06B6D4')}
+                  data={generateChartData('add_to_cart', 'Add to Cart', '#0EA5E9')}
                   options={{
-                    ...chartOptions,
+                    ...getChartOptions(),
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      ...chartOptions.plugins,
+                      ...getChartOptions().plugins,
                       legend: { display: false }
                     }
                   }}
@@ -614,13 +604,13 @@ export default function DailyGraphs() {
               </div>
               <div className="h-64">
                 <Bar
-                  data={generateChartData('initiate_checkout', 'Initiate Checkout', '#84CC16')}
+                  data={generateChartData('initiate_checkout', 'Initiate Checkout', '#22C55E')}
                   options={{
-                    ...chartOptions,
+                    ...getChartOptions(),
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      ...chartOptions.plugins,
+                      ...getChartOptions().plugins,
                       legend: { display: false }
                     }
                   }}
@@ -640,11 +630,11 @@ export default function DailyGraphs() {
                 <Bar
                   data={generateChartData('complete_registration', 'Complete Registration', '#F97316')}
                   options={{
-                    ...chartOptions,
+                    ...getChartOptions(),
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      ...chartOptions.plugins,
+                      ...getChartOptions().plugins,
                       legend: { display: false }
                     }
                   }}

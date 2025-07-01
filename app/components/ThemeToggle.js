@@ -7,11 +7,6 @@ export default function ThemeToggle() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className={`text-sm font-medium transition-colors duration-200 ${
-        theme === 'light' ? 'text-gray-700' : 'text-gray-300'
-      }`}>
-        {theme === 'light' ? '☀️ Light' : '🌙 Dark'}
-      </span>
       <button
         onClick={toggleTheme}
         className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg ${

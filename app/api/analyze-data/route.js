@@ -32,26 +32,20 @@ export async function POST(req) {
     }));
 
     const prompt = `
-    Analyze this Facebook Ads data and provide exactly 5 concise key insights:
+    Analyze this Facebook Ads data and provide exactly 1 super concise insight:
 
     Data: ${JSON.stringify(dataForAnalysis, null, 2)}
 
     Important: All spend amounts are in INR (Indian Rupees).
 
     Requirements:
-    - Maximum 5 bullet points only
-    - Each point should be 1-2 sentences maximum
-    - Focus on actionable insights
-    - Include specific numbers/percentages when relevant
-    - Use INR for all monetary references
-    - Prioritize the most important findings
+    - ONLY 1 single line insight (maximum 15 words)
+    - Most critical finding or recommendation
+    - Include key metric if relevant
+    - Use INR for monetary references
+    - Be direct and actionable
 
-    Format as:
-    • Point 1
-    • Point 2
-    • Point 3
-    • Point 4
-    • Point 5
+    Format: One line only, no bullet points, no formatting.
     `;
 
     const result = await model.generateContent(prompt);
