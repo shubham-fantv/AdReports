@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { format, subDays, startOfMonth } from 'date-fns';
 import ThemeToggle from './components/ThemeToggle';
 
 const presets = [
@@ -25,6 +26,29 @@ const presets = [
   "this_year",
 ];
 
+// Helper functions using date-fns for IST timezone
+const getISTDate = () => {
+  const now = new Date();
+  // Convert to IST (UTC+5:30) manually
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const istTime = new Date(utc + (5.5 * 3600000));
+  return istTime;
+};
+
+const formatDateString = (date) => {
+  return format(date, 'yyyy-MM-dd');
+};
+
+const getTodayIST = () => {
+  return formatDateString(getISTDate());
+};
+
+const getYesterdayIST = () => {
+  const today = getISTDate();
+  const yesterday = subDays(today, 1);
+  return formatDateString(yesterday);
+};
+
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
@@ -34,13 +58,13 @@ export default function Home() {
 
   const [mode, setMode] = useState("daily");
   const [presetDate, setPresetDate] = useState("yesterday");
-  const [startDate, setStartDate] = useState("2025-05-01");
-  const [endDate, setEndDate] = useState("2025-05-10");
+  const [startDate, setStartDate] = useState(() => getTodayIST());
+  const [endDate, setEndDate] = useState(() => getTodayIST());
   const [perDay, setPerDay] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("2025-06-30");
-  const [dailyStartDate, setDailyStartDate] = useState("");
-  const [dailyEndDate, setDailyEndDate] = useState("");
-  const [activeDailyRange, setActiveDailyRange] = useState("last7");
+  const [selectedDate, setSelectedDate] = useState(() => getTodayIST());
+  const [dailyStartDate, setDailyStartDate] = useState(() => getTodayIST());
+  const [dailyEndDate, setDailyEndDate] = useState(() => getTodayIST());
+  const [activeDailyRange, setActiveDailyRange] = useState("today");
   const [aggregateData, setAggregateData] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState("default");
 
@@ -279,17 +303,42 @@ export default function Home() {
     setLoading(false);
   };
 
-  const fetchDailyData = async () => {
+  const fetchDailyData = async (startDateParam = null, endDateParam = null) => {
     setLoading(true);
     
+    // Use parameters if provided, otherwise fall back to state
+    const startDateStr = startDateParam || dailyStartDate;
+    const endDateStr = endDateParam || dailyEndDate;
+    
+    // Debug logging for manual date selection
+    if (!startDateParam && !endDateParam) {
+      console.log("Manual date selection - using state values:", { startDateStr, endDateStr });
+    }
+    
+    // Validate dates
+    if (!startDateStr || !endDateStr) {
+      console.error("Invalid dates:", { startDateStr, endDateStr });
+      setLoading(false);
+      return;
+    }
+    
     // Generate array of dates between start and end
-    const startDate = new Date(dailyStartDate);
-    const endDate = new Date(dailyEndDate);
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      console.error("Invalid date objects:", { startDate, endDate });
+      setLoading(false);
+      return;
+    }
+    
     const dateArray = [];
     
     for (let dt = new Date(startDate); dt <= endDate; dt.setDate(dt.getDate() + 1)) {
       dateArray.push(new Date(dt).toISOString().split('T')[0]);
     }
+    
+    // Generate date array for the selected range
     
     try {
       // Make separate API call for each day
@@ -304,8 +353,8 @@ export default function Home() {
       
       // Also fetch aggregate data for the entire date range
       const aggregateParams = new URLSearchParams({
-        start_date: dailyStartDate,
-        end_date: dailyEndDate,
+        start_date: startDateStr,
+        end_date: endDateStr,
         per_day: "false",
         account: selectedAccount
       });
@@ -324,10 +373,16 @@ export default function Home() {
         }
       });
       
-      console.log("Combined data:", allCampaigns);
-      console.log("Aggregate data:", aggregateResult);
+      // Process the fetched data
       
       setTableData(allCampaigns);
+      
+      // Calculate overview from the same daily data that's displayed in the table
+      // This ensures overview boxes match the table data exactly for both MMS and Videonation
+      if (allCampaigns.length > 0) {
+        const overviewFromDailyData = calculateCustomOverview(allCampaigns);
+        setOverview(overviewFromDailyData);
+      }
       
       // Extract aggregate data correctly
       const aggregateItem = aggregateResult?.data?.campaigns?.[0];
@@ -340,172 +395,46 @@ export default function Home() {
         setAggregateData(null);
       }
       
-      setOverview(null); // No overview for daily reports
+      // Note: Overview will be set separately by calling functions if needed
       
     } catch (error) {
       console.error("Error fetching daily data:", error);
       setTableData([]);
       setAggregateData(null);
-      setOverview(null);
+      // Note: Don't clear overview here - let calling functions handle it
     }
     
     setLoading(false);
   };
 
   const setDateRange = async (days, rangeKey) => {
-    const today = new Date();
-    const endDate = new Date(today);
-    endDate.setDate(today.getDate() - 1); // Yesterday
+    const today = getISTDate();
+    const startDate = subDays(today, days - 1);
     
-    const startDate = new Date(endDate);
-    startDate.setDate(endDate.getDate() - (days - 1)); // Get exactly 'days' number of days
-    
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = endDate.toISOString().split('T')[0];
+    const startDateStr = formatDateString(startDate);
+    const endDateStr = formatDateString(today);
     
     setDailyStartDate(startDateStr);
     setDailyEndDate(endDateStr);
     setActiveDailyRange(rangeKey);
     
-    // Immediately fetch data for the quick range selection
-    setLoading(true);
-    
-    try {
-      // Fetch daily breakdown data
-      const dateArray = [];
-      for (let dt = new Date(startDate); dt <= endDate; dt.setDate(dt.getDate() + 1)) {
-        dateArray.push(new Date(dt).toISOString().split('T')[0]);
-      }
-      
-      const allPromises = dateArray.map(date => {
-        const params = new URLSearchParams({
-          selected_date: date,
-          per_day: "true",
-          account: selectedAccount
-        });
-        return fetch(`/api/daily-reports?${params}`).then(res => res.json());
-      });
-      
-      const aggregateParams = new URLSearchParams({
-        start_date: startDateStr,
-        end_date: endDateStr,
-        per_day: "false",
-        account: selectedAccount
-      });
-      const aggregatePromise = fetch(`/api/daily-reports?${aggregateParams}`).then(res => res.json());
-      
-      const [allResults, aggregateResult] = await Promise.all([
-        Promise.all(allPromises),
-        aggregatePromise
-      ]);
-      
-      const allCampaigns = [];
-      allResults.forEach(result => {
-        if (result?.data?.campaigns) {
-          allCampaigns.push(...result.data.campaigns);
-        }
-      });
-      
-      setTableData(allCampaigns);
-      
-      const aggregateItem = aggregateResult?.data?.campaigns?.[0];
-      if (aggregateItem) {
-        setAggregateData(aggregateItem);
-      } else {
-        setAggregateData(null);
-      }
-      
-      // Also fetch campaign performance overview
-      const customRes = await fetch(`/api/custom?start=${startDateStr}&end=${endDateStr}&account=${selectedAccount}`);
-      const customJson = await customRes.json();
-      const customData = customJson?.data || [];
-      setOverview(calculateCustomOverview(customData));
-      
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setTableData([]);
-      setAggregateData(null);
-      setOverview(null);
-    }
-    
-    setLoading(false);
+    // Fetch daily data - overview will be calculated automatically from this data
+    fetchDailyData(startDateStr, endDateStr);
   };
 
   const setThisMonth = async () => {
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
+    const today = getISTDate();
+    const monthStart = startOfMonth(today);
     
-    const startDateStr = startOfMonth.toISOString().split('T')[0];
-    const endDateStr = yesterday.toISOString().split('T')[0];
+    const startDateStr = formatDateString(monthStart);
+    const endDateStr = formatDateString(today);
     
     setDailyStartDate(startDateStr);
     setDailyEndDate(endDateStr);
     setActiveDailyRange("thisMonth");
     
-    // Immediately fetch data for this month
-    setLoading(true);
-    
-    try {
-      // Fetch daily breakdown data
-      const dateArray = [];
-      for (let dt = new Date(startOfMonth); dt <= yesterday; dt.setDate(dt.getDate() + 1)) {
-        dateArray.push(new Date(dt).toISOString().split('T')[0]);
-      }
-      
-      const allPromises = dateArray.map(date => {
-        const params = new URLSearchParams({
-          selected_date: date,
-          per_day: "true",
-          account: selectedAccount
-        });
-        return fetch(`/api/daily-reports?${params}`).then(res => res.json());
-      });
-      
-      const aggregateParams = new URLSearchParams({
-        start_date: startDateStr,
-        end_date: endDateStr,
-        per_day: "false",
-        account: selectedAccount
-      });
-      const aggregatePromise = fetch(`/api/daily-reports?${aggregateParams}`).then(res => res.json());
-      
-      const [allResults, aggregateResult] = await Promise.all([
-        Promise.all(allPromises),
-        aggregatePromise
-      ]);
-      
-      const allCampaigns = [];
-      allResults.forEach(result => {
-        if (result?.data?.campaigns) {
-          allCampaigns.push(...result.data.campaigns);
-        }
-      });
-      
-      setTableData(allCampaigns);
-      
-      const aggregateItem = aggregateResult?.data?.campaigns?.[0];
-      if (aggregateItem) {
-        setAggregateData(aggregateItem);
-      } else {
-        setAggregateData(null);
-      }
-      
-      // Also fetch campaign performance overview
-      const customRes = await fetch(`/api/custom?start=${startDateStr}&end=${endDateStr}&account=${selectedAccount}`);
-      const customJson = await customRes.json();
-      const customData = customJson?.data || [];
-      setOverview(calculateCustomOverview(customData));
-      
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setTableData([]);
-      setAggregateData(null);
-      setOverview(null);
-    }
-    
-    setLoading(false);
+    // Fetch daily data - overview will be calculated automatically from this data
+    fetchDailyData(startDateStr, endDateStr);
   };
 
   const fetchCustomData = async () => {
@@ -528,8 +457,15 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Set default Last 7 Days range and load data on page load
-    setDateRange(7, "last7");
+    // Set default to today's data for videonation on first load
+    const todayStr = getTodayIST();
+    
+    setDailyStartDate(todayStr);
+    setDailyEndDate(todayStr);
+    setActiveDailyRange("today");
+    
+    // Load today's data immediately - overview will be calculated automatically
+    fetchDailyData(todayStr, todayStr);
   }, []);
 
   useEffect(() => {
@@ -697,6 +633,24 @@ export default function Home() {
               </label>
               <div className="flex flex-wrap gap-2">
               <button
+                onClick={() => {
+                  const todayStr = getTodayIST();
+                  setDailyStartDate(todayStr);
+                  setDailyEndDate(todayStr);
+                  setActiveDailyRange("today");
+                  
+                  // Fetch daily data - overview will be calculated automatically from this data
+                  fetchDailyData(todayStr, todayStr);
+                }}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeDailyRange === "today" 
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                Today
+              </button>
+              <button
                 onClick={() => setDateRange(7, "last7")}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeDailyRange === "last7" 
@@ -715,16 +669,6 @@ export default function Home() {
                 }`}
               >
                 Last 10 Days
-              </button>
-              <button
-                onClick={() => setDateRange(30, "last30")}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  activeDailyRange === "last30" 
-                    ? "bg-blue-700 text-white shadow-lg" 
-                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-                }`}
-              >
-                Last 30 Days
               </button>
               <button
                 onClick={setThisMonth}
@@ -766,25 +710,21 @@ export default function Home() {
               <div className="flex-shrink-0">
                 <button
                   onClick={() => {
-                    // Fetch both daily data and campaign performance data
-                    fetchDailyData();
+                    console.log("Apply button clicked - Manual date selection:", { 
+                      dailyStartDate, 
+                      dailyEndDate 
+                    });
                     
-                    // Also fetch campaign performance overview for the date range
-                    const fetchCustomRangeData = async () => {
-                      try {
-                        const res = await fetch(`/api/custom?start=${dailyStartDate}&end=${dailyEndDate}&account=${selectedAccount}`);
-                        const json = await res.json();
-                        const data = json?.data || [];
-                        
-                        // Update overview with custom calculation
-                        setOverview(calculateCustomOverview(data));
-                      } catch (error) {
-                        console.error('Error fetching custom range data:', error);
-                      }
-                    };
+                    // Clear previous data first
+                    setTableData([]);
+                    setAggregateData(null);
+                    setOverview(null);
                     
-                    fetchCustomRangeData();
+                    // Set active range to custom
                     setActiveDailyRange("custom");
+                    
+                    // Fetch daily data - overview will be calculated automatically from this data
+                    fetchDailyData();
                   }}
                   className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
                 >
