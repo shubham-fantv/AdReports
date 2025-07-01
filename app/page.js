@@ -113,7 +113,6 @@ export default function Home() {
         "Spend (INR)",
         "Impressions",
         "Clicks",
-        "Reach",
         "CPC",
         "CPM",
         "CTR",
@@ -128,7 +127,6 @@ export default function Home() {
         "Spend (INR)",
         "Impressions",
         "Clicks",
-        "Reach",
         "CPC",
         "CPM",
         "CTR",
@@ -148,7 +146,6 @@ export default function Home() {
           Math.round(item.spend || 0),
           item.impressions || 0,
           item.clicks || 0,
-          item.reach || 0,
           Math.round(item.cpc || 0),
           Math.round(item.cpm || 0),
           parseFloat(item.ctr || 0).toFixed(2),
@@ -163,7 +160,6 @@ export default function Home() {
           Math.round(item.spend || 0),
           item.impressions || 0,
           item.clicks || 0,
-          item.reach || 0,
           Math.round(item.cpc || 0),
           Math.round(item.cpm || 0),
           parseFloat(item.ctr || 0).toFixed(2),
@@ -184,7 +180,6 @@ export default function Home() {
           Math.round(aggregateData.spend || 0),
           aggregateData.impressions || 0,
           aggregateData.clicks || 0,
-          aggregateData.reach || 0,
           Math.round(aggregateData.cpc || 0),
           Math.round(aggregateData.cpm || 0),
           parseFloat(aggregateData.ctr || 0).toFixed(2),
@@ -199,7 +194,6 @@ export default function Home() {
           Math.round(aggregateData.spend || 0),
           aggregateData.impressions || 0,
           aggregateData.clicks || 0,
-          aggregateData.reach || 0,
           Math.round(aggregateData.cpc || 0),
           Math.round(aggregateData.cpm || 0),
           parseFloat(aggregateData.ctr || 0).toFixed(2),
@@ -772,7 +766,6 @@ export default function Home() {
                     <th className="px-4 py-2">Spend</th>
                     <th className="px-4 py-2">Impressions</th>
                     <th className="px-4 py-2">Clicks</th>
-                    <th className="px-4 py-2">Reach</th>
                     <th className="px-4 py-2">CPC</th>
                     <th className="px-4 py-2">CPM</th>
                     <th className="px-4 py-2">CTR</th>
@@ -802,7 +795,6 @@ export default function Home() {
                       <td className="px-4 py-2">{Math.round(item.spend)}</td>
                       <td className="px-4 py-2">{item.impressions}</td>
                       <td className="px-4 py-2">{item.clicks}</td>
-                      <td className="px-4 py-2">{item.reach}</td>
                       <td className="px-4 py-2">{Math.round(item.cpc)}</td>
                       <td className="px-4 py-2">{Math.round(item.cpm)}</td>
                       <td className="px-4 py-2">
@@ -852,7 +844,6 @@ export default function Home() {
                       <td className="px-4 py-2">{Math.round(aggregateData.spend)}</td>
                       <td className="px-4 py-2">{aggregateData.impressions}</td>
                       <td className="px-4 py-2">{aggregateData.clicks}</td>
-                      <td className="px-4 py-2">{aggregateData.reach}</td>
                       <td className="px-4 py-2">{Math.round(aggregateData.cpc)}</td>
                       <td className="px-4 py-2">{Math.round(aggregateData.cpm)}</td>
                       <td className="px-4 py-2">

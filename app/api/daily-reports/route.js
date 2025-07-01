@@ -80,7 +80,7 @@ export async function GET(req) {
   
   try {
     const params = new URLSearchParams({
-      fields: "ad_name,ad_id,impressions,clicks,cpc,cpm,ctr,spend,actions",
+      fields: "ad_name,ad_id,impressions,clicks,cpc,cpm,ctr,spend,actions,reach,frequency",
       level: "ad",
       time_range: JSON.stringify({ since, until }),
       action_breakdowns: "action_type"
@@ -164,15 +164,19 @@ export async function GET(req) {
     } else {
       // Make a separate API call for account-level aggregate data
       const aggregateParams = new URLSearchParams({
-        fields: "impressions,clicks,cpc,cpm,ctr,spend,actions",
+        fields: "impressions,clicks,cpc,cpm,ctr,spend,actions,reach,frequency",
         level: "account",
         time_range: JSON.stringify({ since, until }),
         action_breakdowns: "action_type"
       });
 
+      console.log(`Making aggregate API call for ${account} account to:`, `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=***&${aggregateParams.toString()}`);
+
       const { data: aggregateData } = await axios.get(
         `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=${accessToken}&${aggregateParams.toString()}`
       );
+
+      console.log(`Aggregate API response for ${account}:`, JSON.stringify(aggregateData, null, 2));
 
       processedCampaigns = aggregateData.data || [];
       
@@ -212,6 +216,7 @@ export async function GET(req) {
   } catch (error) {
     const accountType = account === "mms" ? "MMS" : "VideoNation";
     console.error(`Error fetching ${accountType} daily reports data:`, error.message);
+    console.error(`Error details:`, error.response?.data || error);
     
     // Check if it's an authentication error
     if (error.response?.status === 401 || error.message.includes('Invalid access token')) {
@@ -220,6 +225,16 @@ export async function GET(req) {
           error: `${accountType} access token is invalid or expired. Please check credentials.` 
         }),
         { status: 401 }
+      );
+    }
+    
+    // Check for other Facebook API errors
+    if (error.response?.data?.error) {
+      return new Response(
+        JSON.stringify({ 
+          error: `Facebook API error for ${accountType}: ${error.response.data.error.message}` 
+        }),
+        { status: error.response.status || 500 }
       );
     }
     
