@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import ThemeToggle from './components/ThemeToggle';
 
 const presets = [
   "today",
@@ -351,7 +352,7 @@ export default function Home() {
     setLoading(false);
   };
 
-  const setDateRange = (days, rangeKey) => {
+  const setDateRange = async (days, rangeKey) => {
     const today = new Date();
     const endDate = new Date(today);
     endDate.setDate(today.getDate() - 1); // Yesterday
@@ -359,20 +360,152 @@ export default function Home() {
     const startDate = new Date(endDate);
     startDate.setDate(endDate.getDate() - (days - 1)); // Get exactly 'days' number of days
     
-    setDailyStartDate(startDate.toISOString().split('T')[0]);
-    setDailyEndDate(endDate.toISOString().split('T')[0]);
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
+    setDailyStartDate(startDateStr);
+    setDailyEndDate(endDateStr);
     setActiveDailyRange(rangeKey);
+    
+    // Immediately fetch data for the quick range selection
+    setLoading(true);
+    
+    try {
+      // Fetch daily breakdown data
+      const dateArray = [];
+      for (let dt = new Date(startDate); dt <= endDate; dt.setDate(dt.getDate() + 1)) {
+        dateArray.push(new Date(dt).toISOString().split('T')[0]);
+      }
+      
+      const allPromises = dateArray.map(date => {
+        const params = new URLSearchParams({
+          selected_date: date,
+          per_day: "true",
+          account: selectedAccount
+        });
+        return fetch(`/api/daily-reports?${params}`).then(res => res.json());
+      });
+      
+      const aggregateParams = new URLSearchParams({
+        start_date: startDateStr,
+        end_date: endDateStr,
+        per_day: "false",
+        account: selectedAccount
+      });
+      const aggregatePromise = fetch(`/api/daily-reports?${aggregateParams}`).then(res => res.json());
+      
+      const [allResults, aggregateResult] = await Promise.all([
+        Promise.all(allPromises),
+        aggregatePromise
+      ]);
+      
+      const allCampaigns = [];
+      allResults.forEach(result => {
+        if (result?.data?.campaigns) {
+          allCampaigns.push(...result.data.campaigns);
+        }
+      });
+      
+      setTableData(allCampaigns);
+      
+      const aggregateItem = aggregateResult?.data?.campaigns?.[0];
+      if (aggregateItem) {
+        setAggregateData(aggregateItem);
+      } else {
+        setAggregateData(null);
+      }
+      
+      // Also fetch campaign performance overview
+      const customRes = await fetch(`/api/custom?start=${startDateStr}&end=${endDateStr}&account=${selectedAccount}`);
+      const customJson = await customRes.json();
+      const customData = customJson?.data || [];
+      setOverview(calculateCustomOverview(customData));
+      
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setTableData([]);
+      setAggregateData(null);
+      setOverview(null);
+    }
+    
+    setLoading(false);
   };
 
-  const setThisMonth = () => {
+  const setThisMonth = async () => {
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
     
-    setDailyStartDate(startOfMonth.toISOString().split('T')[0]);
-    setDailyEndDate(yesterday.toISOString().split('T')[0]);
+    const startDateStr = startOfMonth.toISOString().split('T')[0];
+    const endDateStr = yesterday.toISOString().split('T')[0];
+    
+    setDailyStartDate(startDateStr);
+    setDailyEndDate(endDateStr);
     setActiveDailyRange("thisMonth");
+    
+    // Immediately fetch data for this month
+    setLoading(true);
+    
+    try {
+      // Fetch daily breakdown data
+      const dateArray = [];
+      for (let dt = new Date(startOfMonth); dt <= yesterday; dt.setDate(dt.getDate() + 1)) {
+        dateArray.push(new Date(dt).toISOString().split('T')[0]);
+      }
+      
+      const allPromises = dateArray.map(date => {
+        const params = new URLSearchParams({
+          selected_date: date,
+          per_day: "true",
+          account: selectedAccount
+        });
+        return fetch(`/api/daily-reports?${params}`).then(res => res.json());
+      });
+      
+      const aggregateParams = new URLSearchParams({
+        start_date: startDateStr,
+        end_date: endDateStr,
+        per_day: "false",
+        account: selectedAccount
+      });
+      const aggregatePromise = fetch(`/api/daily-reports?${aggregateParams}`).then(res => res.json());
+      
+      const [allResults, aggregateResult] = await Promise.all([
+        Promise.all(allPromises),
+        aggregatePromise
+      ]);
+      
+      const allCampaigns = [];
+      allResults.forEach(result => {
+        if (result?.data?.campaigns) {
+          allCampaigns.push(...result.data.campaigns);
+        }
+      });
+      
+      setTableData(allCampaigns);
+      
+      const aggregateItem = aggregateResult?.data?.campaigns?.[0];
+      if (aggregateItem) {
+        setAggregateData(aggregateItem);
+      } else {
+        setAggregateData(null);
+      }
+      
+      // Also fetch campaign performance overview
+      const customRes = await fetch(`/api/custom?start=${startDateStr}&end=${endDateStr}&account=${selectedAccount}`);
+      const customJson = await customRes.json();
+      const customData = customJson?.data || [];
+      setOverview(calculateCustomOverview(customData));
+      
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setTableData([]);
+      setAggregateData(null);
+      setOverview(null);
+    }
+    
+    setLoading(false);
   };
 
   const fetchCustomData = async () => {
@@ -403,32 +536,30 @@ export default function Home() {
     loadData();
   }, [presetDate]);
 
-  useEffect(() => {
-    // Auto-fetch daily data when dates are set
-    if (mode === "daily" && dailyStartDate && dailyEndDate) {
-      fetchDailyData();
-    }
-  }, [dailyStartDate, dailyEndDate, mode]);
+  // Removed auto-fetch on date change - now only fetch on button clicks
 
   // Show login form if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg shadow-md w-96 border border-gray-200">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 transition-colors duration-300">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-600 backdrop-blur-sm">
           {/* Header */}
-          <div className="p-6 text-center border-b border-gray-100">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span className="text-xl">📊</span>
+          <div className="p-8 text-center border-b border-gray-100 dark:border-gray-600">
+            <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <span className="text-2xl">📊</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-800">AdDashboard</h1>
-            <p className="text-gray-500 text-sm">Sign in to continue</p>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">AdReports</h1>
+            <p className="text-gray-700 dark:text-gray-200 text-sm">Advanced Campaign Analytics</p>
           </div>
           
           {/* Form */}
-          <div className="p-6">
-            <form onSubmit={handleLogin} className="space-y-4">
+          <div className="p-8">
+            <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
                   Username
                 </label>
                 <input
@@ -438,14 +569,14 @@ export default function Home() {
                     setUsername(e.target.value);
                     setLoginError(""); // Clear error when user types
                   }}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="Enter your username"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
                   Password
                 </label>
                 <input
@@ -455,19 +586,19 @@ export default function Home() {
                     setPassword(e.target.value);
                     setLoginError(""); // Clear error when user types
                   }}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="Enter your password"
                   required
                 />
               </div>
               
               {loginError && (
-                <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
                   <div className="flex items-center">
-                    <span className="text-red-400 mr-2">⚠️</span>
+                    <span className="text-red-400 mr-3 text-lg">⚠️</span>
                     <div>
-                      <p className="text-red-700 text-sm font-medium">Login Failed</p>
-                      <p className="text-red-600 text-xs mt-1">Please check your credentials and try again</p>
+                      <p className="text-red-700 dark:text-red-400 text-sm font-semibold">Authentication Failed</p>
+                      <p className="text-red-600 dark:text-red-500 text-xs mt-1">Please verify your credentials and try again</p>
                     </div>
                   </div>
                 </div>
@@ -476,15 +607,18 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={loggingIn}
-                className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 {loggingIn ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Signing in...
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Authenticating...
                   </>
                 ) : (
-                  "Sign In"
+                  <>
+                    <span>Sign In</span>
+                    <span>→</span>
+                  </>
                 )}
               </button>
             </form>
@@ -495,63 +629,72 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">📊 AdDashboard</h1>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
-        >
-          Logout
-        </button>
-      </div>
-
-      {/* Account Selection */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Facebook Ad Account
-        </label>
-        <select
-          value={selectedAccount}
-          onChange={(e) => {
-            setSelectedAccount(e.target.value);
-            // Clear data when switching accounts
-            setTableData([]);
-            setOverview(null);
-            setAggregateData(null);
-          }}
-          className="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-        >
-          <option value="default">Videonation</option>
-          <option value="mms">MMS Account</option>
-        </select>
-      </div>
-
-      {/* Toggle Mode */}
-      <div className="flex gap-4 mb-6 justify-between">
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setMode("daily");
-              setTableData([]);
-              setOverview(null);
-            }}
-            className={`px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition ${
-              mode === "daily" ? "bg-blue-600 text-white" : "bg-white border"
-            }`}
-          >
-            Daily Reports
-          </button>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 backdrop-blur-sm bg-white/80 dark:bg-gray-800/80">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <span className="text-lg">📊</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">AdReports</h1>
+                <p className="text-sm text-gray-700 dark:text-gray-200 font-medium">Campaign Analytics Dashboard</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <ThemeToggle />
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md"
+              >
+                <span>Logout</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            className="px-4 py-2 bg-green-600 rounded text-white cursor-pointer hover:bg-green-700 transition"
-            onClick={() => (window.location.href = "/daily-graphs")}
-          >
-            Daily Graphs 📊
-          </button>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-8">
+
+        {/* Control Panel */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Account Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                Ad Account
+              </label>
+              <select
+                value={selectedAccount}
+                onChange={(e) => {
+                  setSelectedAccount(e.target.value);
+                  setTableData([]);
+                  setOverview(null);
+                  setAggregateData(null);
+                }}
+                className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="default">Videonation</option>
+                <option value="mms">MMS Account</option>
+              </select>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex items-end">
+              <button
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                onClick={() => (window.location.href = "/daily-graphs")}
+              >
+                <span>📊</span>
+                <span>Daily Graphs</span>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+
 
       {/* Preset Selector */}
       {mode === "preset" && (
@@ -573,51 +716,49 @@ export default function Home() {
         </div>
       )}
 
-      {/* Daily Reports Selector */}
-      {mode === "daily" && (
-        <div className="mb-6">
+        {/* Date Range Selector */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Date Range</h3>
+          
           {/* Quick Date Range Buttons */}
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">
-              Quick Date Ranges
-            </label>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setDateRange(7, "last7")}
-                className={`px-3 py-1 rounded text-sm transition ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeDailyRange === "last7" 
-                    ? "bg-blue-600 text-white" 
-                    : "bg-gray-200 hover:bg-gray-300"
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
                 }`}
               >
                 Last 7 Days
               </button>
               <button
                 onClick={() => setDateRange(10, "last10")}
-                className={`px-3 py-1 rounded text-sm transition ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeDailyRange === "last10" 
-                    ? "bg-blue-600 text-white" 
-                    : "bg-gray-200 hover:bg-gray-300"
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
                 }`}
               >
                 Last 10 Days
               </button>
               <button
                 onClick={() => setDateRange(30, "last30")}
-                className={`px-3 py-1 rounded text-sm transition ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeDailyRange === "last30" 
-                    ? "bg-blue-600 text-white" 
-                    : "bg-gray-200 hover:bg-gray-300"
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
                 }`}
               >
                 Last 30 Days
               </button>
               <button
                 onClick={setThisMonth}
-                className={`px-3 py-1 rounded text-sm transition ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeDailyRange === "thisMonth" 
-                    ? "bg-blue-600 text-white" 
-                    : "bg-gray-200 hover:bg-gray-300"
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
                 }`}
               >
                 This Month
@@ -625,60 +766,61 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Date Range Pickers */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
+          {/* Custom Date Range */}
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
                 Start Date
               </label>
               <input
                 type="date"
                 value={dailyStartDate}
                 onChange={(e) => setDailyStartDate(e.target.value)}
-                className="p-2 rounded border w-full"
+                className="w-40 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
                 End Date
               </label>
               <input
                 type="date"
                 value={dailyEndDate}
                 onChange={(e) => setDailyEndDate(e.target.value)}
-                className="p-2 rounded border w-full"
+                className="w-40 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Show Per Day Breakdown
-              </label>
-              <div className="flex items-center p-2">
-                <input
-                  type="checkbox"
-                  id="perDay"
-                  checked={perDay}
-                  onChange={(e) => setPerDay(e.target.checked)}
-                  className="mr-2"
-                />
-                <label htmlFor="perDay" className="text-sm">
-                  Show metrics per day
-                </label>
-              </div>
+            <div className="flex-shrink-0">
+              <button
+                onClick={() => {
+                  // Fetch both daily data and campaign performance data
+                  fetchDailyData();
+                  
+                  // Also fetch campaign performance overview for the date range
+                  const fetchCustomRangeData = async () => {
+                    try {
+                      const res = await fetch(`/api/custom?start=${dailyStartDate}&end=${dailyEndDate}&account=${selectedAccount}`);
+                      const json = await res.json();
+                      const data = json?.data || [];
+                      
+                      // Update overview with custom calculation
+                      setOverview(calculateCustomOverview(data));
+                    } catch (error) {
+                      console.error('Error fetching custom range data:', error);
+                    }
+                  };
+                  
+                  fetchCustomRangeData();
+                  setActiveDailyRange("custom");
+                }}
+                className="w-full px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                Apply Range
+              </button>
             </div>
           </div>
           
-          <button
-            onClick={() => {
-              fetchDailyData();
-              setActiveDailyRange("custom");
-            }}
-            className="px-6 py-2 bg-blue-600 text-white rounded mt-4"
-          >
-            Done
-          </button>
         </div>
-      )}
 
       {/* Custom Date Range Picker */}
       {mode === "custom" && (
@@ -712,182 +854,216 @@ export default function Home() {
         </div>
       )}
 
-      {loading && (
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <div>
-              <p className="text-blue-700 font-medium">Loading campaign data...</p>
-              <p className="text-blue-600 text-sm">Please wait while we fetch your reports</p>
+        {loading && (
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+              <div>
+                <p className="text-blue-700 dark:text-blue-400 font-semibold text-lg">Loading Analytics Data</p>
+                <p className="text-blue-600 dark:text-blue-500 text-sm mt-1">Fetching campaign performance metrics...</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {!loading && (
         <>
-          {/* Overview if preset */}
-          {overview && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {Object.entries(overview).map(([key, val]) => (
-                <div
-                  key={key}
-                  className="bg-white p-4 rounded shadow text-center"
-                >
-                  <h2 className="text-sm text-gray-500 uppercase">
-                    {key.replace(/_/g, " ")}
-                  </h2>
-                  <p className="text-lg font-semibold">
-                    {key == "average_ctr" || key == "frequency"
-                      ? Math.round(val * 100) / 100
-                      : Math.round(val)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Table */}
-          <div className="bg-white p-6 rounded shadow">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Campaign Performance</h2>
+        {/* Performance Table */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Campaign Performance</h2>
+                <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">Detailed analytics and metrics</p>
+              </div>
               <button
                 onClick={exportToCSV}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition flex items-center gap-2"
+                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                📊 Export CSV
+                <span>📈</span>
+                <span>Export CSV</span>
               </button>
             </div>
-            <div className="overflow-auto">
-              <table className="w-full table-auto border border-gray-200 text-center">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2">Date</th>
-                    <th className="px-4 py-2">Spend</th>
-                    <th className="px-4 py-2">Impressions</th>
-                    <th className="px-4 py-2">Clicks</th>
-                    <th className="px-4 py-2">CPC</th>
-                    <th className="px-4 py-2">CPM</th>
-                    <th className="px-4 py-2">CTR</th>
-                    <th className="px-4 py-2">Frequency</th>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-3 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider w-32">Date</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Spend</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Impressions</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Clicks</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">CPC</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">CPM</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">CTR</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Frequency</th>
+                  {selectedAccount === "mms" ? (
+                    <>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">App Install</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Purchase</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Registration</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Add to Cart</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Purchase</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Checkout</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Registration</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {tableData.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white w-32">
+                      {item.date_start || item.date}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right font-medium">
+                      ₹{Math.round(item.spend).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                      {parseInt(item.impressions).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                      {parseInt(item.clicks).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                      ₹{Math.round(item.cpc).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                      ₹{Math.round(item.cpm).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                      {parseFloat(item.ctr || 0).toFixed(2)}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                      {(Math.round(item.frequency * 100) / 100).toFixed(2)}
+                    </td>
                     {selectedAccount === "mms" ? (
                       <>
-                        <th className="px-4 py-2">Mobile App Install</th>
-                        <th className="px-4 py-2">Purchase</th>
-                        <th className="px-4 py-2">Complete Registration</th>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                          {getActionValue(item.actions, "mobile_app_install").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                          {getActionValue(item.actions, "purchase").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                          {getActionValue(item.actions, "complete_registration").toLocaleString()}
+                        </td>
                       </>
                     ) : (
                       <>
-                        <th className="px-4 py-2">Add to Cart</th>
-                        <th className="px-4 py-2">Purchase</th>
-                        <th className="px-4 py-2">Initiate Checkout</th>
-                        <th className="px-4 py-2">Complete Registration</th>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                          {getActionValue(item.actions, "add_to_cart").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                          {getActionValue(item.actions, "purchase").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                          {getActionValue(item.actions, "initiate_checkout").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                          {getActionValue(item.actions, "complete_registration").toLocaleString()}
+                        </td>
                       </>
                     )}
                   </tr>
-                </thead>
-                <tbody>
-                  {tableData.map((item, idx) => (
-                    <tr key={idx} className="border-t text-sm text-gray-700">
-                      <td className="px-4 py-2">
-                        {item.date_start || item.date}
-                      </td>
-                      <td className="px-4 py-2">{Math.round(item.spend)}</td>
-                      <td className="px-4 py-2">{item.impressions}</td>
-                      <td className="px-4 py-2">{item.clicks}</td>
-                      <td className="px-4 py-2">{Math.round(item.cpc)}</td>
-                      <td className="px-4 py-2">{Math.round(item.cpm)}</td>
-                      <td className="px-4 py-2">
-                        {parseFloat(item.ctr || 0).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-2">
-                        {Math.round(item.frequency * 100) / 100}
-                      </td>
-                      {selectedAccount === "mms" ? (
-                        <>
-                          <td className="px-4 py-2">
-                            {getActionValue(item.actions, "mobile_app_install")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(item.actions, "purchase")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(item.actions, "complete_registration")}
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-4 py-2">
-                            {getActionValue(item.actions, "add_to_cart")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(item.actions, "purchase")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(item.actions, "initiate_checkout")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(item.actions, "complete_registration")}
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  ))}
+                ))}
                   
-                  {/* Aggregate/Total Row */}
-                  {console.log("Checking aggregateData in render:", aggregateData)}
-                  {aggregateData && (
-                    <tr className="border-t-2 border-blue-600 bg-blue-50 text-sm font-semibold text-blue-800">
-                      <td className="px-4 py-2">
-                        {aggregateData.campaign_name || `TOTAL (${dailyStartDate} to ${dailyEndDate})`}
-                      </td>
-                      <td className="px-4 py-2">{Math.round(aggregateData.spend)}</td>
-                      <td className="px-4 py-2">{aggregateData.impressions}</td>
-                      <td className="px-4 py-2">{aggregateData.clicks}</td>
-                      <td className="px-4 py-2">{Math.round(aggregateData.cpc)}</td>
-                      <td className="px-4 py-2">{Math.round(aggregateData.cpm)}</td>
-                      <td className="px-4 py-2">
-                        {parseFloat(aggregateData.ctr || 0).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-2">
-                        {Math.round(aggregateData.frequency * 100) / 100}
-                      </td>
-                      {selectedAccount === "mms" ? (
-                        <>
-                          <td className="px-4 py-2">
-                            {getActionValue(aggregateData.actions, "mobile_app_install")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(aggregateData.actions, "purchase")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(aggregateData.actions, "complete_registration")}
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-4 py-2">
-                            {getActionValue(aggregateData.actions, "add_to_cart")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(aggregateData.actions, "purchase")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(aggregateData.actions, "initiate_checkout")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {getActionValue(aggregateData.actions, "complete_registration")}
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                {/* Aggregate/Total Row */}
+                {aggregateData && (
+                  <tr className="border-t-4 border-primary-500 bg-gradient-to-r from-primary-50 to-blue-50 dark:from-primary-900/30 dark:to-blue-900/30">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 w-32">
+                      TOTAL
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                      ₹{Math.round(aggregateData.spend).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                      {parseInt(aggregateData.impressions).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                      {parseInt(aggregateData.clicks).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                      ₹{Math.round(aggregateData.cpc).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                      ₹{Math.round(aggregateData.cpm).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                      {parseFloat(aggregateData.ctr || 0).toFixed(2)}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                      {(Math.round(aggregateData.frequency * 100) / 100).toFixed(2)}
+                    </td>
+                    {selectedAccount === "mms" ? (
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                          {getActionValue(aggregateData.actions, "mobile_app_install").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                          {getActionValue(aggregateData.actions, "purchase").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                          {getActionValue(aggregateData.actions, "complete_registration").toLocaleString()}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                          {getActionValue(aggregateData.actions, "add_to_cart").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                          {getActionValue(aggregateData.actions, "purchase").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                          {getActionValue(aggregateData.actions, "initiate_checkout").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-800 dark:text-primary-300 text-right">
+                          {getActionValue(aggregateData.actions, "complete_registration").toLocaleString()}
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
+        </div>
+
+        {/* Overview Cards - Moved below table */}
+        {overview && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+            {Object.entries(overview).map(([key, val]) => (
+              <div
+                key={key}
+                className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                    {key.replace(/_/g, " ")}
+                  </h3>
+                  <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <span className="text-white text-sm">📈</span>
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {key === "average_ctr" || key === "frequency"
+                    ? (Math.round(val * 100) / 100).toLocaleString()
+                    : Math.round(val).toLocaleString()}
+                </p>
+                <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                  {key.includes('total') ? 'Total' : key.includes('average') ? 'Average' : 'Metric'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         </>
-      )}
+        )}
+      </main>
     </div>
   );
 }

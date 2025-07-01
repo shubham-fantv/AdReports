@@ -1,2 +1,202 @@
 @import "tailwindcss";
 
+/* Modern Dark Mode Theme */
+.dark {
+  color-scheme: dark;
+}
+
+/* Main backgrounds and text */
+.dark body {
+  background-color: #0f172a !important; /* slate-900 */
+  color: #f8fafc !important; /* slate-50 */
+}
+
+/* Card and container backgrounds */
+.dark .bg-white {
+  background-color: #1e293b !important; /* slate-800 */
+  border-color: #334155 !important; /* slate-700 */
+}
+
+.dark .bg-gray-50 {
+  background-color: #0f172a !important; /* slate-900 */
+}
+
+.dark .bg-gray-100 {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+/* Typography - High contrast for readability */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: #ffffff !important; /* pure white for headings */
+}
+
+.dark p {
+  color: #e2e8f0 !important; /* slate-200 - excellent readability */
+}
+
+.dark .text-gray-900 {
+  color: #f8fafc !important; /* slate-50 */
+}
+
+.dark .text-gray-800 {
+  color: #e2e8f0 !important; /* slate-200 */
+}
+
+.dark .text-gray-700 {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+
+.dark .text-gray-600 {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+.dark .text-gray-500 {
+  color: #64748b !important; /* slate-500 */
+}
+
+/* Borders and dividers */
+.dark .border-gray-200 {
+  border-color: #334155 !important; /* slate-700 */
+}
+
+.dark .border-gray-300 {
+  border-color: #475569 !important; /* slate-600 */
+}
+
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #334155 !important; /* slate-700 */
+}
+
+/* Form elements */
+.dark input, .dark select, .dark textarea {
+  background-color: #1e293b !important; /* slate-800 */
+  border-color: #475569 !important; /* slate-600 */
+  color: #f8fafc !important; /* slate-50 */
+}
+
+.dark input:focus, .dark select:focus, .dark textarea:focus {
+  border-color: #3b82f6 !important; /* blue-500 */
+  background-color: #0f172a !important; /* slate-900 */
+}
+
+/* Tables */
+.dark table {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+.dark th {
+  background-color: #334155 !important; /* slate-700 */
+  color: #f8fafc !important; /* slate-50 */
+}
+
+.dark td {
+  color: #e2e8f0 !important; /* slate-200 */
+  border-color: #334155 !important; /* slate-700 */
+}
+
+.dark tr:hover {
+  background-color: #475569 !important; /* slate-600 */
+}
+
+/* Buttons and interactive elements */
+.dark .bg-primary-600 {
+  background-color: #2563eb !important; /* blue-600 */
+}
+
+.dark .bg-primary-600:hover {
+  background-color: #1d4ed8 !important; /* blue-700 */
+}
+
+/* Modern glass morphism effects */
+.dark .backdrop-blur-sm {
+  background-color: rgba(30, 41, 59, 0.8) !important; /* slate-800 with opacity */
+}
+
+/* Gradient backgrounds for cards */
+.dark .bg-gradient-to-br {
+  background: linear-gradient(to bottom right, #0f172a, #1e293b) !important;
+}
+
+/* Improved shadows for depth */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Base styles */
+@layer base {
+  * {
+    @apply transition-colors duration-300;
+  }
+  
+  html {
+    @apply antialiased text-base;
+  }
+  
+  body {
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-50 font-medium;
+    line-height: 1.6;
+  }
+  
+  /* Improved text contrast */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-gray-900 dark:text-white font-semibold;
+    line-height: 1.4;
+  }
+  
+  p {
+    @apply text-gray-700 dark:text-gray-200;
+    line-height: 1.7;
+  }
+  
+  /* Form elements */
+  input, select, textarea {
+    @apply text-gray-900 dark:text-white;
+  }
+  
+  /* Table text */
+  table {
+    @apply text-gray-900 dark:text-gray-100;
+  }
+  
+  th {
+    @apply text-gray-700 dark:text-gray-200 font-semibold;
+  }
+  
+  td {
+    @apply text-gray-800 dark:text-gray-100;
+  }
+}
+
+/* Component styles */
+@layer components {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-lg;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+}
+

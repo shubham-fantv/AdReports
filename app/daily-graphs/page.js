@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Line, Bar } from "react-chartjs-2";
+import ThemeToggle from '../components/ThemeToggle';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -208,282 +209,451 @@ export default function DailyGraphs() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">📈 Daily Reports Graphs</h1>
-        <button
-          onClick={() => (window.location.href = "/")}
-          className="px-4 py-2 bg-gray-600 rounded text-white cursor-pointer hover:bg-gray-700 transition"
-        >
-          ← Back to Dashboard
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 backdrop-blur-sm bg-white/80 dark:bg-gray-800/80">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                <span className="text-lg">📈</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Daily Analytics</h1>
+                <p className="text-sm text-gray-700 dark:text-gray-200">Comprehensive performance insights</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <ThemeToggle />
+              <button
+                onClick={() => (window.location.href = "/")}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md"
+              >
+                <span>← Dashboard</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      {/* Account Selection */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Facebook Ad Account
-        </label>
-        <select
-          value={selectedAccount}
-          onChange={(e) => {
-            setSelectedAccount(e.target.value);
-            setChartData([]);
-            setAnalysis("");
-          }}
-          className="p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-        >
-          <option value="default">Videonation</option>
-          <option value="mms">MMS Account</option>
-        </select>
-      </div>
+      <main className="max-w-7xl mx-auto px-6 py-8">
 
-      {/* Date Range Controls */}
-      <div className="mb-6 bg-white p-4 rounded shadow">
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
-            Quick Date Ranges
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setDateRange(3, "last3")}
-              className={`px-3 py-1 rounded text-sm transition ${
-                activeRange === "last3" 
-                  ? "bg-blue-600 text-white" 
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-            >
-              Last 3 Days
-            </button>
-            <button
-              onClick={() => setDateRange(7, "last7")}
-              className={`px-3 py-1 rounded text-sm transition ${
-                activeRange === "last7" 
-                  ? "bg-blue-600 text-white" 
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-            >
-              Last 7 Days
-            </button>
-            <button
-              onClick={() => setDateRange(10, "last10")}
-              className={`px-3 py-1 rounded text-sm transition ${
-                activeRange === "last10" 
-                  ? "bg-blue-600 text-white" 
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-            >
-              Last 10 Days
-            </button>
-            <button
-              onClick={() => setDateRange(30, "last30")}
-              className={`px-3 py-1 rounded text-sm transition ${
-                activeRange === "last30" 
-                  ? "bg-blue-600 text-white" 
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-            >
-              Last 30 Days
-            </button>
-            <button
-              onClick={setThisMonth}
-              className={`px-3 py-1 rounded text-sm transition ${
-                activeRange === "thisMonth" 
-                  ? "bg-blue-600 text-white" 
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-            >
-              This Month
-            </button>
+        {/* Control Panel */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analytics Configuration</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">Configure data source and date ranges</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                Ad Account
+              </label>
+              <select
+                value={selectedAccount}
+                onChange={(e) => {
+                  setSelectedAccount(e.target.value);
+                  setChartData([]);
+                  setAnalysis("");
+                }}
+                className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="default">Videonation</option>
+                <option value="mms">MMS Account</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Start Date</label>
-            <input
-              type="date"
-              value={dailyStartDate}
-              onChange={(e) => setDailyStartDate(e.target.value)}
-              className="p-2 rounded border w-full"
-            />
+        {/* Date Range Selector */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Date Range Selection</h3>
+          
+          {/* Quick Date Range Buttons */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
+              Quick Ranges
+            </label>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setDateRange(3, "last3")}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeRange === "last3" 
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                Last 3 Days
+              </button>
+              <button
+                onClick={() => setDateRange(7, "last7")}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeRange === "last7" 
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                Last 7 Days
+              </button>
+              <button
+                onClick={() => setDateRange(10, "last10")}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeRange === "last10" 
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                Last 10 Days
+              </button>
+              <button
+                onClick={() => setDateRange(30, "last30")}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeRange === "last30" 
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                Last 30 Days
+              </button>
+              <button
+                onClick={setThisMonth}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  activeRange === "thisMonth" 
+                    ? "bg-blue-700 text-white shadow-lg" 
+                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                This Month
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">End Date</label>
-            <input
-              type="date"
-              value={dailyEndDate}
-              onChange={(e) => setDailyEndDate(e.target.value)}
-              className="p-2 rounded border w-full"
-            />
-          </div>
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                fetchDailyData();
-                setActiveRange("custom");
-              }}
-              className="px-6 py-2 bg-blue-600 text-white rounded w-full"
-            >
-              Update Graphs
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* AI Performance Insights */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
-              <span className="text-white text-lg">🤖</span>
+          {/* Custom Date Range */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={dailyStartDate}
+                onChange={(e) => setDailyStartDate(e.target.value)}
+                className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-800">Performance Insights</h2>
-              <p className="text-sm text-gray-500">AI-powered analysis by Gemini</p>
+              <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={dailyEndDate}
+                onChange={(e) => setDailyEndDate(e.target.value)}
+                className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  fetchDailyData();
+                  setActiveRange("custom");
+                }}
+                className="w-full px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Update Charts
+              </button>
             </div>
           </div>
-          {analyzingData && (
-            <div className="flex items-center space-x-2 text-blue-600">
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm font-medium">Analyzing...</span>
-            </div>
-          )}
         </div>
-        
-        {analyzingData ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">Analyzing your campaign data...</p>
-            <p className="text-gray-500 text-sm mt-1">This may take a few seconds</p>
-          </div>
-        ) : analysis ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {analysis.split('\n').filter(line => line.trim().startsWith('•')).map((insight, index) => {
-              // Clean the text from markdown and bullet points
-              const cleanText = insight.replace(/[•*]/g, '').replace(/\*\*(.*?)\*\*/g, '$1').trim();
-              const colors = [
-                'from-blue-500 to-blue-600',
-                'from-green-500 to-green-600', 
-                'from-purple-500 to-purple-600',
-                'from-orange-500 to-orange-600',
-                'from-red-500 to-red-600'
-              ];
-              const icons = ['💰', '📈', '🎯', '⚡', '🚀'];
-              
-              return (
-                <div key={index} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                  <div className="flex items-center mb-3">
-                    <div className={`w-8 h-8 bg-gradient-to-r ${colors[index]} rounded-lg flex items-center justify-center mr-3 text-white text-sm font-bold`}>
-                      {index + 1}
-                    </div>
-                    <span className="text-2xl">{icons[index]}</span>
-                  </div>
-                  <p className="text-gray-700 text-sm leading-relaxed font-medium">
-                    {cleanText}
-                  </p>
-                </div>
-              );
-            })}
-            
-            {analysis.split('\n').filter(line => line.trim().startsWith('•')).length === 0 && (
-              <div className="col-span-full bg-white rounded-lg border border-gray-200 p-6">
-                <div className="text-gray-700 leading-relaxed">
-                  {analysis.replace(/\*\*(.*?)\*\*/g, '$1')}
-                </div>
+
+        {/* AI Performance Insights */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mr-4">
+                <span className="text-white text-xl">🤖</span>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI Performance Insights</h2>
+                <p className="text-sm text-gray-700 dark:text-gray-200">Powered by Gemini AI analytics</p>
+              </div>
+            </div>
+            {analyzingData && (
+              <div className="flex items-center space-x-3 text-purple-600 dark:text-purple-400">
+                <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm font-medium">Analyzing...</span>
               </div>
             )}
           </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">📊</span>
+          
+          {analyzingData ? (
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-800 p-8 text-center">
+              <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-purple-700 dark:text-purple-400 font-semibold text-lg">Analyzing Campaign Data</p>
+              <p className="text-purple-600 dark:text-purple-500 text-sm mt-1">AI is processing your performance metrics...</p>
             </div>
-            <p className="text-gray-600 font-medium">Ready to analyze your campaign performance</p>
-            <p className="text-gray-500 text-sm mt-1">Select a date range above to get AI-powered insights</p>
+          ) : analysis ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {analysis.split('\n').filter(line => line.trim().startsWith('•')).map((insight, index) => {
+                const cleanText = insight.replace(/[•*]/g, '').replace(/\*\*(.*?)\*\*/g, '$1').trim();
+                const colors = [
+                  'from-blue-500 to-blue-600',
+                  'from-green-500 to-green-600', 
+                  'from-purple-500 to-purple-600',
+                  'from-orange-500 to-orange-600',
+                  'from-red-500 to-red-600'
+                ];
+                const icons = ['💰', '📈', '🎯', '⚡', '🚀'];
+                
+                return (
+                  <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
+                    <div className="flex items-center mb-4">
+                      <div className={`w-10 h-10 bg-gradient-to-r ${colors[index % colors.length]} rounded-xl flex items-center justify-center mr-3 text-white text-sm font-bold group-hover:scale-110 transition-transform duration-200`}>
+                        {index + 1}
+                      </div>
+                      <span className="text-2xl">{icons[index % icons.length]}</span>
+                    </div>
+                    <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed font-medium">
+                      {cleanText}
+                    </p>
+                  </div>
+                );
+              })}
+              
+              {analysis.split('\n').filter(line => line.trim().startsWith('•')).length === 0 && (
+                <div className="col-span-full bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-6">
+                  <div className="text-gray-800 dark:text-gray-200 leading-relaxed">
+                    {analysis.replace(/\*\*(.*?)\*\*/g, '$1')}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-8 text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">📊</span>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 font-semibold">Ready to Analyze Performance</p>
+              <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Select a date range to get AI-powered insights on your campaigns</p>
+            </div>
+          )}
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl">
+              <div className="flex items-center space-x-4">
+                <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+                <div>
+                  <p className="text-gray-900 dark:text-white font-semibold">Loading Analytics</p>
+                  <p className="text-gray-700 dark:text-gray-200 text-sm">Fetching performance data...</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-      </div>
 
-      {loading ? (
-        <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Spend Chart */}
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Daily Spend</h3>
-            <Line
-              data={generateChartData('spend', 'Spend ($)', '#3B82F6')}
-              options={chartOptions}
-            />
-          </div>
+        {/* Charts Grid */}
+        {!loading && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Spend Chart */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm font-bold">₹</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Daily Spend</h3>
+              </div>
+              <div className="h-64">
+                <Line
+                  data={generateChartData('spend', 'Spend (₹)', '#3B82F6')}
+                  options={{
+                    ...chartOptions,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
 
-          {/* Impressions Chart */}
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Daily Impressions</h3>
-            <Line
-              data={generateChartData('impressions', 'Impressions', '#10B981')}
-              options={chartOptions}
-            />
-          </div>
+            {/* Impressions Chart */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm">👁</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Daily Impressions</h3>
+              </div>
+              <div className="h-64">
+                <Line
+                  data={generateChartData('impressions', 'Impressions', '#10B981')}
+                  options={{
+                    ...chartOptions,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
 
-          {/* Clicks Chart */}
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Daily Clicks</h3>
-            <Line
-              data={generateChartData('clicks', 'Clicks', '#F59E0B')}
-              options={chartOptions}
-            />
-          </div>
+            {/* Clicks Chart */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm">🔗</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Daily Clicks</h3>
+              </div>
+              <div className="h-64">
+                <Line
+                  data={generateChartData('clicks', 'Clicks', '#F59E0B')}
+                  options={{
+                    ...chartOptions,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
 
-          {/* CTR Chart */}
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Daily CTR</h3>
-            <Line
-              data={generateChartData('ctr', 'CTR (%)', '#EF4444')}
-              options={chartOptions}
-            />
-          </div>
+            {/* CTR Chart */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm">%</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Click-Through Rate</h3>
+              </div>
+              <div className="h-64">
+                <Line
+                  data={generateChartData('ctr', 'CTR (%)', '#EF4444')}
+                  options={{
+                    ...chartOptions,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
 
-          {/* Conversions Chart */}
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Daily Purchases</h3>
-            <Bar
-              data={generateChartData('purchase', 'Purchases', '#8B5CF6')}
-              options={chartOptions}
-            />
-          </div>
+            {/* Conversions Chart */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm">🛍</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Daily Purchases</h3>
+              </div>
+              <div className="h-64">
+                <Bar
+                  data={generateChartData('purchase', 'Purchases', '#8B5CF6')}
+                  options={{
+                    ...chartOptions,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
 
-          {/* Add to Cart Chart */}
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Daily Add to Cart</h3>
-            <Bar
-              data={generateChartData('add_to_cart', 'Add to Cart', '#06B6D4')}
-              options={chartOptions}
-            />
-          </div>
+            {/* Add to Cart Chart */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm">🛒</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add to Cart Events</h3>
+              </div>
+              <div className="h-64">
+                <Bar
+                  data={generateChartData('add_to_cart', 'Add to Cart', '#06B6D4')}
+                  options={{
+                    ...chartOptions,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
 
-          {/* Initiate Checkout Chart */}
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Daily Initiate Checkout</h3>
-            <Bar
-              data={generateChartData('initiate_checkout', 'Initiate Checkout', '#84CC16')}
-              options={chartOptions}
-            />
-          </div>
+            {/* Initiate Checkout Chart */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-lime-500 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm">💳</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Checkout Initiated</h3>
+              </div>
+              <div className="h-64">
+                <Bar
+                  data={generateChartData('initiate_checkout', 'Initiate Checkout', '#84CC16')}
+                  options={{
+                    ...chartOptions,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
 
-          {/* Complete Registration Chart */}
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Daily Complete Registration</h3>
-            <Bar
-              data={generateChartData('complete_registration', 'Complete Registration', '#F97316')}
-              options={chartOptions}
-            />
+            {/* Complete Registration Chart */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm">👤</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">User Registrations</h3>
+              </div>
+              <div className="h-64">
+                <Bar
+                  data={generateChartData('complete_registration', 'Complete Registration', '#F97316')}
+                  options={{
+                    ...chartOptions,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </main>
     </div>
   );
 }
