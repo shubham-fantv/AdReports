@@ -79,9 +79,11 @@ export async function GET(req) {
   }
   
   try {
+    console.log(`Making API call for ${account} account with date range: since=${since}, until=${until}, perDay=${perDay}`);
+    
     const params = new URLSearchParams({
       fields: "ad_name,ad_id,impressions,clicks,cpc,cpm,ctr,spend,actions,reach,frequency",
-      level: "ad",
+      level: "account",
       time_range: JSON.stringify({ since, until }),
       action_breakdowns: "action_type"
     });
@@ -90,9 +92,13 @@ export async function GET(req) {
       params.append("time_increment", "1");
     }
 
+    console.log(`API URL for ${account}:`, `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=***&${params.toString()}`);
+
     const { data } = await axios.get(
       `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=${accessToken}&${params.toString()}`
     );
+
+    console.log(`API response for ${account} (${since} to ${until}):`, JSON.stringify(data, null, 2));
 
     let processedCampaigns = data.data || [];
 
@@ -132,14 +138,9 @@ export async function GET(req) {
         dailyData[date].clicks += parseInt(item.clicks || 0);
         dailyData[date].spend += parseFloat(item.spend || 0);
         
-        // Combine actions (filter out specific actions for MMS)
+        // Combine actions
         if (item.actions) {
           item.actions.forEach(action => {
-            // For MMS account: skip add_to_cart and initiate_checkout only
-            if (account === "mms" && (action.action_type === "add_to_cart" || action.action_type === "initiate_checkout")) {
-              return;
-            }
-            
             const existingAction = dailyData[date].actions.find(a => a.action_type === action.action_type);
             if (existingAction) {
               existingAction.value = (parseInt(existingAction.value) + parseInt(action.value)).toString();
@@ -180,15 +181,6 @@ export async function GET(req) {
 
       processedCampaigns = aggregateData.data || [];
       
-      // Filter actions for MMS account
-      if (account === "mms") {
-        processedCampaigns = processedCampaigns.map(campaign => ({
-          ...campaign,
-          actions: campaign.actions ? campaign.actions.filter(action => 
-            action.action_type !== "add_to_cart" && action.action_type !== "initiate_checkout"
-          ) : []
-        }));
-      }
       
       // Add display fields for account-level data
       processedCampaigns = processedCampaigns.map((item) => ({
