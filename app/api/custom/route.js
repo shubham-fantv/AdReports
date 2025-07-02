@@ -4,6 +4,9 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const startDate = searchParams.get("start");
   const endDate = searchParams.get("end");
+  const account = searchParams.get("account") || "default";
+  const level = searchParams.get("level") || "account";
+  const fields = searchParams.get("fields");
 
   try {
     console.log("buddy", process.env.NEXT_PUBLIC_API_URL)
@@ -13,7 +16,9 @@ export async function GET(req) {
         params: {
           start_date: startDate || "2025-05-01",
           end_date: endDate || "2025-05-10",
-          level: "campaign",
+          level: level,
+          account: account,
+          ...(fields && { fields: fields })
         },
         headers: {
           Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MzQxOTI3MGRiYjU5M2FmNDc3NjZiNiIsIm5hbWUiOiJIaW1hbnNodSBKYWluIiwiaWF0IjoxNzQ5NzI0NzU5fQ.OnleWnLm_aXWHrgG3QLwTOAhOhz76Kjtive1ZQboSNw`,

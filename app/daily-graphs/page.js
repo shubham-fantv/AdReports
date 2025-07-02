@@ -37,6 +37,7 @@ export default function DailyGraphs() {
   const [analysis, setAnalysis] = useState("");
   const [analyzingData, setAnalyzingData] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState("default");
+  const [selectedLevel, setSelectedLevel] = useState("account");
 
   const getActionValue = (actions, actionType) => {
     if (!actions || !Array.isArray(actions)) return 0;
@@ -57,16 +58,6 @@ export default function DailyGraphs() {
     setActiveRange(rangeKey);
   };
 
-  const setThisMonth = () => {
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    
-    setDailyStartDate(startOfMonth.toISOString().split('T')[0]);
-    setDailyEndDate(yesterday.toISOString().split('T')[0]);
-    setActiveRange("thisMonth");
-  };
 
   // Check authentication on page load
   useEffect(() => {
@@ -125,10 +116,16 @@ export default function DailyGraphs() {
     
     try {
       const allPromises = dateArray.map(date => {
+        const fields = selectedLevel === "campaign" 
+          ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
+          : "spend,impressions,clicks,ctr,cpm,cpc,frequency,actions";
+          
         const params = new URLSearchParams({
           selected_date: date,
           per_day: "true",
-          account: selectedAccount
+          account: selectedAccount,
+          level: selectedLevel,
+          fields: fields
         });
         return fetch(`/api/daily-reports?${params}`).then(res => res.json());
       });
@@ -146,10 +143,10 @@ export default function DailyGraphs() {
       const sortedData = allCampaigns.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
       setChartData(sortedData);
       
-      // Analyze data with Gemini
-      if (sortedData.length > 0) {
-        analyzeDataWithGemini(sortedData);
-      }
+      // AI analysis disabled for now
+      // if (sortedData.length > 0) {
+      //   analyzeDataWithGemini(sortedData);
+      // }
       
     } catch (error) {
       console.error("Error fetching daily data:", error);
@@ -163,7 +160,7 @@ export default function DailyGraphs() {
     if (dailyStartDate && dailyEndDate) {
       fetchDailyData();
     }
-  }, [dailyStartDate, dailyEndDate, selectedAccount]);
+  }, [dailyStartDate, dailyEndDate, selectedAccount, selectedLevel]);
 
   const generateChartData = (metric, label, color) => {
     const labels = chartData.map(item => item.date_start);
@@ -188,6 +185,57 @@ export default function DailyGraphs() {
         },
       ],
     };
+  };
+
+  const generateCampaignChartData = (metric, campaignData, color) => {
+    const labels = campaignData.map(item => item.date_start);
+    const data = campaignData.map(item => {
+      if (metric === 'add_to_cart') return getActionValue(item.actions, 'add_to_cart');
+      if (metric === 'purchase') return getActionValue(item.actions, 'purchase');
+      if (metric === 'initiate_checkout') return getActionValue(item.actions, 'initiate_checkout');
+      if (metric === 'complete_registration') return getActionValue(item.actions, 'complete_registration');
+      if (metric === 'mobile_app_install') return getActionValue(item.actions, 'mobile_app_install');
+      return parseFloat(item[metric] || 0);
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: metric.charAt(0).toUpperCase() + metric.slice(1),
+          data,
+          borderColor: color,
+          backgroundColor: color + '20',
+          tension: 0.1,
+          fill: true,
+        },
+      ],
+    };
+  };
+
+  const getUniqueCampaigns = () => {
+    if (selectedLevel !== "campaign" || !chartData.length) return [];
+    
+    const campaignMap = {};
+    chartData.forEach(item => {
+      if (item.campaign_name && !campaignMap[item.campaign_name]) {
+        campaignMap[item.campaign_name] = [];
+      }
+      if (item.campaign_name) {
+        campaignMap[item.campaign_name].push(item);
+      }
+    });
+    
+    return Object.entries(campaignMap)
+      .map(([name, data]) => ({
+        name,
+        data: data.sort((a, b) => new Date(a.date_start) - new Date(b.date_start))
+      }))
+      .filter(campaign => {
+        // Calculate total spend for this campaign
+        const totalSpend = campaign.data.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
+        return totalSpend >= 100; // Only show campaigns with spend >= 100
+      });
   };
 
   const getChartOptions = () => ({
@@ -305,7 +353,26 @@ export default function DailyGraphs() {
                 className="w-48 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="default">Videonation</option>
-                <option value="mms">MMS Account</option>
+                <option value="mms">MMS</option>
+              </select>
+            </div>
+
+            {/* Level Selection */}
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                Level
+              </label>
+              <select
+                value={selectedLevel}
+                onChange={(e) => {
+                  setSelectedLevel(e.target.value);
+                  setChartData([]);
+                  setAnalysis("");
+                }}
+                className="w-40 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="account">Account</option>
+                <option value="campaign">Campaign</option>
               </select>
             </div>
 
@@ -355,16 +422,6 @@ export default function DailyGraphs() {
                 >
                   Last 30 Days
                 </button>
-                <button
-                  onClick={setThisMonth}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    activeRange === "thisMonth" 
-                      ? "bg-blue-700 text-white shadow-lg" 
-                      : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-                  }`}
-                >
-                  This Month
-                </button>
               </div>
             </div>
 
@@ -407,27 +464,16 @@ export default function DailyGraphs() {
           </div>
         </div>
 
-        {/* AI Insight */}
+        {/* AI Insight - Disabled */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-gray-400 rounded-lg flex items-center justify-center flex-shrink-0">
               <span className="text-white text-sm">🤖</span>
             </div>
             <div className="flex-1 min-w-0">
-              {analyzingData ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">Analyzing...</span>
-                </div>
-              ) : analysis ? (
-                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
-                  <span className="text-purple-600 dark:text-purple-400 font-semibold">AI Insight:</span> {analysis.replace(/\*\*(.*?)\*\*/g, '$1').trim()}
-                </p>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  <span className="text-purple-600 dark:text-purple-400 font-semibold">AI Ready:</span> Select date range for instant insights
-                </p>
-              )}
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-gray-500 dark:text-gray-400 font-semibold">AI Insights:</span> Currently disabled
+              </p>
             </div>
           </div>
         </div>
@@ -448,7 +494,7 @@ export default function DailyGraphs() {
         )}
 
         {/* Charts Grid */}
-        {!loading && (
+        {!loading && selectedLevel === "account" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Spend Chart */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
@@ -641,6 +687,138 @@ export default function DailyGraphs() {
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Campaign Level Charts */}
+        {!loading && selectedLevel === "campaign" && (
+          <div className="space-y-8">
+            {getUniqueCampaigns().map((campaign, campaignIdx) => (
+              <div key={campaign.name} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{campaign.name}</h2>
+                  <p className="text-gray-600 dark:text-gray-400">Campaign performance over time</p>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Spend Chart */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <div className="flex items-center mb-4">
+                      <div className="w-6 h-6 bg-blue-500 rounded-md flex items-center justify-center mr-2">
+                        <span className="text-white text-xs font-bold">₹</span>
+                      </div>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Spend</h4>
+                    </div>
+                    <div className="h-48">
+                      <Line
+                        data={generateCampaignChartData('spend', campaign.data, '#3B82F6')}
+                        options={{
+                          ...getChartOptions(),
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            ...getChartOptions().plugins,
+                            legend: { display: false },
+                            title: { display: false }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Impressions Chart */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <div className="flex items-center mb-4">
+                      <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center mr-2">
+                        <span className="text-white text-xs">👁</span>
+                      </div>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Impressions</h4>
+                    </div>
+                    <div className="h-48">
+                      <Line
+                        data={generateCampaignChartData('impressions', campaign.data, '#10B981')}
+                        options={{
+                          ...getChartOptions(),
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            ...getChartOptions().plugins,
+                            legend: { display: false },
+                            title: { display: false }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Clicks Chart */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <div className="flex items-center mb-4">
+                      <div className="w-6 h-6 bg-orange-500 rounded-md flex items-center justify-center mr-2">
+                        <span className="text-white text-xs">🔗</span>
+                      </div>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Clicks</h4>
+                    </div>
+                    <div className="h-48">
+                      <Line
+                        data={generateCampaignChartData('clicks', campaign.data, '#F59E0B')}
+                        options={{
+                          ...getChartOptions(),
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            ...getChartOptions().plugins,
+                            legend: { display: false },
+                            title: { display: false }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Conversions Chart */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <div className="flex items-center mb-4">
+                      <div className="w-6 h-6 bg-purple-500 rounded-md flex items-center justify-center mr-2">
+                        <span className="text-white text-xs">🛍</span>
+                      </div>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {selectedAccount === "mms" ? "App Installs" : "Purchases"}
+                      </h4>
+                    </div>
+                    <div className="h-48">
+                      <Line
+                        data={generateCampaignChartData(
+                          selectedAccount === "mms" ? 'mobile_app_install' : 'purchase', 
+                          campaign.data, 
+                          '#8B5CF6'
+                        )}
+                        options={{
+                          ...getChartOptions(),
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            ...getChartOptions().plugins,
+                            legend: { display: false },
+                            title: { display: false }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {getUniqueCampaigns().length === 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">📊</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Campaign Data</h3>
+                <p className="text-gray-600 dark:text-gray-400">Select a date range to view campaign-level analytics</p>
+              </div>
+            )}
           </div>
         )}
       </main>

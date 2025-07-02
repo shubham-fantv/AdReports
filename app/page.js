@@ -67,9 +67,11 @@ export default function Home() {
   const [activeDailyRange, setActiveDailyRange] = useState("today");
   const [aggregateData, setAggregateData] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState("default");
+  const [selectedLevel, setSelectedLevel] = useState("account");
 
   const [overview, setOverview] = useState(null);
   const [tableData, setTableData] = useState([]);
+  const [campaignTotals, setCampaignTotals] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const getActionValue = (actions, actionType) => {
@@ -132,9 +134,14 @@ export default function Home() {
     const csvData = [];
     
     // Add header row
+    const baseHeaders = ["Date"];
+    if (selectedLevel === "campaign") {
+      baseHeaders.push("Campaign");
+    }
+    
     if (selectedAccount === "mms") {
       csvData.push([
-        "Date",
+        ...baseHeaders,
         "Spend (INR)",
         "Impressions",
         "Clicks",
@@ -148,7 +155,7 @@ export default function Home() {
       ]);
     } else {
       csvData.push([
-        "Date",
+        ...baseHeaders,
         "Spend (INR)",
         "Impressions",
         "Clicks",
@@ -165,9 +172,14 @@ export default function Home() {
 
     // Add daily data rows
     tableData.forEach(item => {
+      const baseRowData = [item.date_start || item.date];
+      if (selectedLevel === "campaign") {
+        baseRowData.push(item.campaign_name || "N/A");
+      }
+      
       if (selectedAccount === "mms") {
         csvData.push([
-          item.date_start || item.date,
+          ...baseRowData,
           Math.round(item.spend || 0),
           item.impressions || 0,
           item.clicks || 0,
@@ -181,7 +193,7 @@ export default function Home() {
         ]);
       } else {
         csvData.push([
-          item.date_start || item.date,
+          ...baseRowData,
           Math.round(item.spend || 0),
           item.impressions || 0,
           item.clicks || 0,
@@ -197,11 +209,13 @@ export default function Home() {
       }
     });
 
-    // Add aggregate/total row if available
-    if (aggregateData) {
+    // Add aggregate/total row if available (only for account level)
+    if (aggregateData && selectedLevel === "account") {
+      const baseTotalData = [`TOTAL (${dailyStartDate} to ${dailyEndDate})`];
+      
       if (selectedAccount === "mms") {
         csvData.push([
-          `TOTAL (${dailyStartDate} to ${dailyEndDate})`,
+          ...baseTotalData,
           Math.round(aggregateData.spend || 0),
           aggregateData.impressions || 0,
           aggregateData.clicks || 0,
@@ -215,7 +229,7 @@ export default function Home() {
         ]);
       } else {
         csvData.push([
-          `TOTAL (${dailyStartDate} to ${dailyEndDate})`,
+          ...baseTotalData,
           Math.round(aggregateData.spend || 0),
           aggregateData.impressions || 0,
           aggregateData.clicks || 0,
@@ -287,12 +301,96 @@ export default function Home() {
     };
   };
 
+  const calculateCampaignTotals = (campaigns) => {
+    if (!campaigns.length) return null;
+
+    const totalSpend = campaigns.reduce((sum, c) => sum + parseFloat(c.spend || 0), 0);
+    const totalImpressions = campaigns.reduce((sum, c) => sum + parseInt(c.impressions || 0), 0);
+    const totalClicks = campaigns.reduce((sum, c) => sum + parseInt(c.clicks || 0), 0);
+    
+    // Calculate weighted averages
+    const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0;
+    const averageCPM = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
+    const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+    
+    // Calculate frequency (weighted average)
+    const totalFrequencyWeighted = campaigns.reduce((sum, c) => {
+      const impressions = parseInt(c.impressions || 0);
+      const frequency = parseFloat(c.frequency || 0);
+      return sum + (impressions * frequency);
+    }, 0);
+    const averageFrequency = totalImpressions > 0 ? totalFrequencyWeighted / totalImpressions : 0;
+
+    // Aggregate actions
+    const aggregatedActions = {};
+    campaigns.forEach(campaign => {
+      if (campaign.actions && Array.isArray(campaign.actions)) {
+        campaign.actions.forEach(action => {
+          if (!aggregatedActions[action.action_type]) {
+            aggregatedActions[action.action_type] = 0;
+          }
+          aggregatedActions[action.action_type] += parseInt(action.value || 0);
+        });
+      }
+    });
+
+    return {
+      spend: totalSpend,
+      impressions: totalImpressions,
+      clicks: totalClicks,
+      cpc: averageCPC,
+      cpm: averageCPM,
+      ctr: averageCTR,
+      frequency: averageFrequency,
+      actions: Object.keys(aggregatedActions).map(actionType => ({
+        action_type: actionType,
+        value: aggregatedActions[actionType].toString()
+      }))
+    };
+  };
+
+  const fetchCampaignTotals = async (startDateStr, endDateStr) => {
+    if (selectedLevel !== "campaign") return null;
+    
+    try {
+      // Make a separate API call for campaign totals with campaign level aggregation
+      // This will get aggregated data for each campaign across the date range
+      const totalsParams = new URLSearchParams({
+        start_date: startDateStr,
+        end_date: endDateStr,
+        per_day: "false", // This ensures aggregation across the date range
+        account: selectedAccount,
+        level: "campaign", // Use campaign level to get each campaign's totals
+        fields: "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
+      });
+      
+      const totalsResponse = await fetch(`/api/daily-reports?${totalsParams}`);
+      const totalsResult = await totalsResponse.json();
+      
+      if (totalsResult?.data?.campaigns) {
+        return totalsResult.data.campaigns; // Return array of campaign totals
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Error fetching campaign totals:", error);
+      return null;
+    }
+  };
+
   const fetchPresetData = async () => {
     setLoading(true);
     const endpoint = mode === "daily" ? "/api/daily-reports" : "/api/dashboard";
+    
+    const fields = selectedLevel === "campaign" 
+      ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
+      : "spend,impressions,clicks,ctr,cpm,cpc,frequency,actions";
+    
     const params = new URLSearchParams({
       date_preset: presetDate,
       account: selectedAccount,
+      level: selectedLevel,
+      fields: fields,
       ...(mode === "daily" && { per_day: perDay.toString() })
     });
     const res = await fetch(`${endpoint}?${params}`);
@@ -339,30 +437,49 @@ export default function Home() {
     }
     
     // Generate date array for the selected range
+    console.log(`Fetching ${selectedLevel} level data for dates:`, dateArray);
     
     try {
       // Make separate API call for each day
       const allPromises = dateArray.map(date => {
+        const fields = selectedLevel === "campaign" 
+          ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
+          : "spend,impressions,clicks,ctr,cpm,cpc,frequency,actions";
+          
         const params = new URLSearchParams({
           selected_date: date,
           per_day: "true",
-          account: selectedAccount
+          account: selectedAccount,
+          level: selectedLevel,
+          fields: fields
         });
         return fetch(`/api/daily-reports?${params}`).then(res => res.json());
       });
       
       // Also fetch aggregate data for the entire date range
+      const aggregateFields = selectedLevel === "campaign" 
+        ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
+        : "spend,impressions,clicks,ctr,cpm,cpc,frequency,actions";
+        
       const aggregateParams = new URLSearchParams({
         start_date: startDateStr,
         end_date: endDateStr,
         per_day: "false",
-        account: selectedAccount
+        account: selectedAccount,
+        level: selectedLevel,
+        fields: aggregateFields
       });
       const aggregatePromise = fetch(`/api/daily-reports?${aggregateParams}`).then(res => res.json());
       
-      const [allResults, aggregateResult] = await Promise.all([
+      // Fetch campaign totals if in campaign level
+      const campaignTotalsPromise = selectedLevel === "campaign" 
+        ? fetchCampaignTotals(startDateStr, endDateStr)
+        : Promise.resolve(null);
+      
+      const [allResults, aggregateResult, campaignTotalsResult] = await Promise.all([
         Promise.all(allPromises),
-        aggregatePromise
+        aggregatePromise,
+        campaignTotalsPromise
       ]);
       
       // Combine all campaigns from all days
@@ -374,12 +491,20 @@ export default function Home() {
       });
       
       // Process the fetched data
-      
       setTableData(allCampaigns);
+      setCampaignTotals(campaignTotalsResult);
+      
       
       // Calculate overview from the same daily data that's displayed in the table
       // This ensures overview boxes match the table data exactly for both MMS and Videonation
       if (allCampaigns.length > 0) {
+        // Log data structure for debugging
+        console.log(`${selectedLevel.toUpperCase()} level data:`, {
+          totalRecords: allCampaigns.length,
+          sampleRecord: allCampaigns[0],
+          allRecords: selectedLevel === "campaign" ? allCampaigns : "Account level - showing first record only"
+        });
+        
         const overviewFromDailyData = calculateCustomOverview(allCampaigns);
         setOverview(overviewFromDailyData);
       }
@@ -401,6 +526,7 @@ export default function Home() {
       console.error("Error fetching daily data:", error);
       setTableData([]);
       setAggregateData(null);
+      setCampaignTotals(null);
       // Note: Don't clear overview here - let calling functions handle it
     }
     
@@ -422,24 +548,15 @@ export default function Home() {
     fetchDailyData(startDateStr, endDateStr);
   };
 
-  const setThisMonth = async () => {
-    const today = getISTDate();
-    const monthStart = startOfMonth(today);
-    
-    const startDateStr = formatDateString(monthStart);
-    const endDateStr = formatDateString(today);
-    
-    setDailyStartDate(startDateStr);
-    setDailyEndDate(endDateStr);
-    setActiveDailyRange("thisMonth");
-    
-    // Fetch daily data - overview will be calculated automatically from this data
-    fetchDailyData(startDateStr, endDateStr);
-  };
 
   const fetchCustomData = async () => {
     setLoading(true);
-    const res = await fetch(`/api/custom?start=${startDate}&end=${endDate}&account=${selectedAccount}`);
+    
+    const fields = selectedLevel === "campaign" 
+      ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
+      : "spend,impressions,clicks,ctr,cpm,cpc,frequency,actions";
+    
+    const res = await fetch(`/api/custom?start=${startDate}&end=${endDate}&account=${selectedAccount}&level=${selectedLevel}&fields=${fields}`);
     const json = await res.json();
     const data = json?.data || [];
 
@@ -618,11 +735,33 @@ export default function Home() {
                   setTableData([]);
                   setOverview(null);
                   setAggregateData(null);
+                  setCampaignTotals(null);
                 }}
                 className="w-48 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="default">Videonation</option>
-                <option value="mms">MMS Account</option>
+                <option value="mms">MMS</option>
+              </select>
+            </div>
+
+            {/* Level Selection */}
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                Level
+              </label>
+              <select
+                value={selectedLevel}
+                onChange={(e) => {
+                  setSelectedLevel(e.target.value);
+                  setTableData([]);
+                  setOverview(null);
+                  setAggregateData(null);
+                  setCampaignTotals(null);
+                }}
+                className="w-40 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="account">Account</option>
+                <option value="campaign">Campaign</option>
               </select>
             </div>
 
@@ -670,16 +809,6 @@ export default function Home() {
               >
                 Last 10 Days
               </button>
-              <button
-                onClick={setThisMonth}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  activeDailyRange === "thisMonth" 
-                    ? "bg-blue-700 text-white shadow-lg" 
-                    : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-                }`}
-              >
-                This Month
-              </button>
             </div>
           </div>
 
@@ -712,7 +841,9 @@ export default function Home() {
                   onClick={() => {
                     console.log("Apply button clicked - Manual date selection:", { 
                       dailyStartDate, 
-                      dailyEndDate 
+                      dailyEndDate,
+                      selectedAccount,
+                      selectedLevel 
                     });
                     
                     // Clear previous data first
@@ -803,6 +934,9 @@ export default function Home() {
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-3 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider w-32">Date</th>
+                  {selectedLevel === "campaign" && (
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Campaign</th>
+                  )}
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Spend</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Impressions</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Clicks</th>
@@ -832,6 +966,11 @@ export default function Home() {
                     <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white w-32">
                       {item.date_start || item.date}
                     </td>
+                    {selectedLevel === "campaign" && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
+                        {item.campaign_name || "N/A"}
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right font-medium">
                       ₹{Math.round(item.spend).toLocaleString()}
                     </td>
@@ -884,12 +1023,82 @@ export default function Home() {
                   </tr>
                 ))}
                   
-                {/* Aggregate/Total Row */}
-                {aggregateData && (
+                {/* Campaign Totals Rows - Show aggregate for each campaign */}
+                {campaignTotals && selectedLevel === "campaign" && Array.isArray(campaignTotals) && (
+                  <>
+                    {campaignTotals.map((campaign, idx) => (
+                      <tr key={`total-${idx}`} className="bg-blue-500 dark:bg-blue-900 border-b border-blue-400 dark:border-blue-800">
+                        <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white w-32">
+                          TOTAL
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white">
+                          {campaign.campaign_name || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                          ₹{Math.round(campaign.spend || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                          {parseInt(campaign.impressions || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                          {parseInt(campaign.clicks || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                          ₹{Math.round(campaign.cpc || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                          ₹{Math.round(campaign.cpm || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                          {parseFloat(campaign.ctr || 0).toFixed(2)}%
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                          {(Math.round((campaign.frequency || 0) * 100) / 100).toFixed(2)}
+                        </td>
+                        {selectedAccount === "mms" ? (
+                          <>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                              {getActionValue(campaign.actions, "mobile_app_install").toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                              {getActionValue(campaign.actions, "purchase").toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                              {getActionValue(campaign.actions, "complete_registration").toLocaleString()}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                              {getActionValue(campaign.actions, "add_to_cart").toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                              {getActionValue(campaign.actions, "purchase").toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                              {getActionValue(campaign.actions, "initiate_checkout").toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                              {getActionValue(campaign.actions, "complete_registration").toLocaleString()}
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </>
+                )}
+
+                {/* Aggregate/Total Row - Only show for account level */}
+                {aggregateData && selectedLevel === "account" && (
                   <tr className="border-t-4 border-gray-300 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
                     <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white w-32">
                       TOTAL
                     </td>
+                    {selectedLevel === "campaign" && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white">
+                        -
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
                       ₹{Math.round(aggregateData.spend).toLocaleString()}
                     </td>

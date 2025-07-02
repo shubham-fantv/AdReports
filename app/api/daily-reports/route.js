@@ -41,6 +41,8 @@ export async function GET(req) {
   const endDate = searchParams.get("end_date");
   const perDay = searchParams.get("per_day") === "true";
   const account = searchParams.get("account") || "default";
+  const level = searchParams.get("level") || "account";
+  const fields = searchParams.get("fields");
   
   // Select credentials based on account
   const accessToken = account === "mms" 
@@ -80,30 +82,77 @@ export async function GET(req) {
   
   try {
     console.log(`Making API call for ${account} account with date range: since=${since}, until=${until}, perDay=${perDay}`);
+    console.log(`Access token exists: ${!!accessToken}`);
+    console.log(`Ad account ID: ${adAccountId}`);
+    console.log(`Level: ${level}`);
+    console.log(`Fields param: ${fields}`);
+    
+    // Use provided fields or default based on level
+    const defaultFields = level === "campaign" 
+      ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
+      : "ad_name,ad_id,impressions,clicks,cpc,cpm,ctr,spend,actions,reach,frequency";
+    
+    const finalFields = fields || defaultFields;
+    console.log(`Final fields being used: ${finalFields}`);
     
     const params = new URLSearchParams({
-      fields: "ad_name,ad_id,impressions,clicks,cpc,cpm,ctr,spend,actions,reach,frequency",
-      level: "account",
-      time_range: JSON.stringify({ since, until }),
+      fields: finalFields,
+      level: level,
       action_breakdowns: "action_type"
     });
+    
+    // Add time_range as separate parameters to match Facebook API format
+    params.append('time_range[since]', since);
+    params.append('time_range[until]', until);
     
     if (perDay) {
       params.append("time_increment", "1");
     }
 
-    console.log(`API URL for ${account}:`, `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=***&${params.toString()}`);
+    const fullUrl = `https://graph.facebook.com/v19.0/${adAccountId}/insights?access_token=${accessToken}&${params.toString()}`;
+    console.log(`FULL Facebook API URL (with token):`, fullUrl);
 
-    const { data } = await axios.get(
-      `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=${accessToken}&${params.toString()}`
-    );
+    console.log(`About to make Facebook Graph API call...`);
+    const { data } = await axios.get(fullUrl);
+    console.log(`Facebook API call successful!`);
 
     console.log(`API response for ${account} (${since} to ${until}):`, JSON.stringify(data, null, 2));
 
     let processedCampaigns = data.data || [];
 
-    if (perDay) {
-      // Aggregate by date when per_day is true
+    if (level === "campaign" && perDay) {
+      // For campaign level with per_day=true, return individual campaigns without aggregation
+      processedCampaigns = processedCampaigns.map(item => ({
+        ...item,
+        // Ensure numeric values are properly formatted
+        spend: parseFloat(item.spend || 0),
+        impressions: parseInt(item.impressions || 0),
+        clicks: parseInt(item.clicks || 0),
+        ctr: parseFloat(item.ctr || 0),
+        cpc: parseFloat(item.cpc || 0),
+        cpm: parseFloat(item.cpm || 0),
+        frequency: parseFloat(item.frequency || 0),
+        // Add date field for consistency
+        date: item.date_start
+      }));
+    } else if (level === "campaign" && !perDay) {
+      // For campaign level with per_day=false, return campaigns aggregated across date range
+      // Facebook API already aggregates when per_day is not specified, so just format the data
+      processedCampaigns = processedCampaigns.map(item => ({
+        ...item,
+        // Ensure numeric values are properly formatted
+        spend: parseFloat(item.spend || 0),
+        impressions: parseInt(item.impressions || 0),
+        clicks: parseInt(item.clicks || 0),
+        ctr: parseFloat(item.ctr || 0),
+        cpc: parseFloat(item.cpc || 0),
+        cpm: parseFloat(item.cpm || 0),
+        frequency: parseFloat(item.frequency || 0),
+        // Add date field for consistency (will be date range)
+        date: `${since} to ${until}`
+      }));
+    } else if (perDay) {
+      // Aggregate by date when per_day is true for account level
       const dailyData = {};
       
       processedCampaigns.forEach(item => {
@@ -165,16 +214,19 @@ export async function GET(req) {
     } else {
       // Make a separate API call for account-level aggregate data
       const aggregateParams = new URLSearchParams({
-        fields: "impressions,clicks,cpc,cpm,ctr,spend,actions,reach,frequency",
-        level: "account",
-        time_range: JSON.stringify({ since, until }),
+        fields: fields || defaultFields,
+        level: level,
         action_breakdowns: "action_type"
       });
+      
+      // Add time_range as separate parameters to match Facebook API format
+      aggregateParams.append('time_range[since]', since);
+      aggregateParams.append('time_range[until]', until);
 
-      console.log(`Making aggregate API call for ${account} account to:`, `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=***&${aggregateParams.toString()}`);
+      console.log(`Making aggregate API call for ${account} account to:`, `https://graph.facebook.com/v19.0/${adAccountId}/insights?access_token=***&${aggregateParams.toString()}`);
 
       const { data: aggregateData } = await axios.get(
-        `https://graph.facebook.com/v21.0/${adAccountId}/insights?access_token=${accessToken}&${aggregateParams.toString()}`
+        `https://graph.facebook.com/v19.0/${adAccountId}/insights?access_token=${accessToken}&${aggregateParams.toString()}`
       );
 
       console.log(`Aggregate API response for ${account}:`, JSON.stringify(aggregateData, null, 2));
