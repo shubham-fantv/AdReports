@@ -1,111 +1,59 @@
 "use client";
-import { useEffect, useState } from "react";
-import { getTodayIST } from "./utils/dateHelpers";
-import { calculateCustomOverview, calculateCountryBasedOverview, exportToCSV } from "./utils/businessLogic";
-import { apiService } from "./services/apiService";
-import ThemeToggle from './components/ThemeToggle';
-import LoginForm from './components/LoginForm';
-import DateRangePicker from './components/DateRangePicker';
-import DataTable from './components/DataTable';
-import OverviewCards from './components/OverviewCards';
+import { useState, useEffect } from "react";
+import DateRangePicker from "./DateRangePicker";
+import DataTable from "./DataTable";
+import OverviewCards from "./OverviewCards";
+import { getTodayIST } from "../utils/dateHelpers";
+import { calculateCustomOverview, calculateCountryBasedOverview, exportToCSV } from "../utils/businessLogic";
+import { apiService } from "../services/apiService";
 
-export default function Home() {
-  // Authentication state
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Data state
+export default function Dashboard() {
+  // State management
   const [selectedAccount, setSelectedAccount] = useState("default");
   const [selectedLevel, setSelectedLevel] = useState("account");
   const [dailyStartDate, setDailyStartDate] = useState(() => getTodayIST());
   const [dailyEndDate, setDailyEndDate] = useState(() => getTodayIST());
   const [activeDailyRange, setActiveDailyRange] = useState("today");
-  
-  // Results state
   const [overview, setOverview] = useState(null);
   const [tableData, setTableData] = useState([]);
   const [campaignTotals, setCampaignTotals] = useState(null);
   const [aggregateData, setAggregateData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Check for existing authentication on page load
-  useEffect(() => {
-    const authStatus = localStorage.getItem("isAuthenticated");
-    if (authStatus === "true") {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  // Load initial data when authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      const todayStr = getTodayIST();
-      setDailyStartDate(todayStr);
-      setDailyEndDate(todayStr);
-      setActiveDailyRange("today");
-      fetchDailyData(todayStr, todayStr);
-    }
-  }, [isAuthenticated]);
-
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem("isAuthenticated");
-    // Clear all data
-    setTableData([]);
-    setOverview(null);
-    setAggregateData(null);
-    setCampaignTotals(null);
-  };
-
-  const clearData = () => {
-    setTableData([]);
-    setOverview(null);
-    setAggregateData(null);
-    setCampaignTotals(null);
-  };
-
+  // Fetch campaign totals
   const fetchCampaignTotals = async (startDateStr, endDateStr) => {
     if (selectedLevel !== "campaign") return null;
     
     try {
-      const totalsParams = new URLSearchParams({
-        start_date: startDateStr,
-        end_date: endDateStr,
-        per_day: "false",
-        account: selectedAccount,
-        level: "campaign",
-        fields: "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
-      });
-      
-      const totalsResponse = await fetch(`/api/daily-reports?${totalsParams}`);
-      const totalsResult = await totalsResponse.json();
-      
-      if (totalsResult?.data?.campaigns) {
-        return totalsResult.data.campaigns;
-      }
-      
-      return null;
+      const totals = await apiService.fetchCampaignTotals(startDateStr, endDateStr, selectedAccount);
+      return totals;
     } catch (error) {
       console.error("Error fetching campaign totals:", error);
       return null;
     }
   };
 
+  // Main data fetching function
   const fetchDailyData = async (startDateParam = null, endDateParam = null) => {
     setLoading(true);
     
+    // Use parameters if provided, otherwise fall back to state
     const startDateStr = startDateParam || dailyStartDate;
     const endDateStr = endDateParam || dailyEndDate;
     
+    // Debug logging for manual date selection
+    if (!startDateParam && !endDateParam) {
+      console.log("Manual date selection - using state values:", { startDateStr, endDateStr });
+    }
+    
+    // Validate dates
     if (!startDateStr || !endDateStr) {
       console.error("Invalid dates:", { startDateStr, endDateStr });
       setLoading(false);
       return;
     }
     
+    // Generate array of dates between start and end
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
     
@@ -116,11 +64,16 @@ export default function Home() {
     }
     
     const dateArray = [];
+    
     for (let dt = new Date(startDate); dt <= endDate; dt.setDate(dt.getDate() + 1)) {
       dateArray.push(new Date(dt).toISOString().split('T')[0]);
     }
     
+    // Generate date array for the selected range
+    console.log(`Fetching ${selectedLevel} level data for dates:`, dateArray);
+    
     try {
+      // Make separate API call for each day
       const allPromises = dateArray.map(date => {
         const fields = selectedLevel === "campaign" 
           ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
@@ -133,9 +86,10 @@ export default function Home() {
           level: selectedLevel,
           fields: fields
         });
-        return fetch(`/api/daily-reports?${params}`).then(res => res.json());
+        return apiService.fetchDailyReports(params);
       });
       
+      // Also fetch aggregate data for the entire date range
       const aggregateFields = selectedLevel === "campaign" 
         ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
         : "spend,impressions,clicks,ctr,cpm,cpc,frequency,actions";
@@ -148,8 +102,9 @@ export default function Home() {
         level: selectedLevel,
         fields: aggregateFields
       });
-      const aggregatePromise = fetch(`/api/daily-reports?${aggregateParams}`).then(res => res.json());
+      const aggregatePromise = apiService.fetchDailyReports(aggregateParams);
       
+      // Fetch campaign totals if in campaign level
       const campaignTotalsPromise = selectedLevel === "campaign" 
         ? fetchCampaignTotals(startDateStr, endDateStr)
         : Promise.resolve(null);
@@ -160,6 +115,7 @@ export default function Home() {
         campaignTotalsPromise
       ]);
       
+      // Combine all campaigns from all days
       const allCampaigns = [];
       allResults.forEach(result => {
         if (result?.data?.campaigns) {
@@ -167,18 +123,38 @@ export default function Home() {
         }
       });
       
+      // Process the fetched data
       setTableData(allCampaigns);
       setCampaignTotals(campaignTotalsResult);
       
+      // Calculate overview from the same daily data that's displayed in the table
       if (allCampaigns.length > 0) {
+        console.log(`${selectedLevel.toUpperCase()} level data:`, {
+          totalRecords: allCampaigns.length,
+          sampleRecord: allCampaigns[0],
+          allRecords: selectedLevel === "campaign" ? allCampaigns : "Account level - showing first record only"
+        });
+        
+        console.log("Dashboard: About to calculate overview with:", {
+          selectedAccount,
+          selectedLevel,
+          campaignCount: allCampaigns.length
+        });
+        
         const overviewFromDailyData = calculateCountryBasedOverview(allCampaigns, selectedAccount, selectedLevel);
+        
+        console.log("Dashboard: Calculated overview:", overviewFromDailyData);
+        
         setOverview(overviewFromDailyData);
       }
       
+      // Extract aggregate data correctly
       const aggregateItem = aggregateResult?.data?.campaigns?.[0];
       if (aggregateItem) {
+        console.log("Setting aggregate data:", aggregateItem);
         setAggregateData(aggregateItem);
       } else {
+        console.log("No aggregate data found");
         setAggregateData(null);
       }
       
@@ -192,71 +168,62 @@ export default function Home() {
     setLoading(false);
   };
 
-  const handleDateRangeChange = (startDateStr, endDateStr) => {
-    fetchDailyData(startDateStr, endDateStr);
+  // Clear data function
+  const clearData = () => {
+    setTableData([]);
+    setOverview(null);
+    setAggregateData(null);
+    setCampaignTotals(null);
   };
 
-  const handleApplyDates = () => {
-    clearData();
-    setActiveDailyRange("custom");
-    fetchDailyData();
-  };
-
+  // Handle export CSV
   const handleExportCSV = () => {
     exportToCSV(tableData, aggregateData, selectedAccount, selectedLevel, dailyStartDate, dailyEndDate);
   };
 
-  // Show login form if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 transition-colors duration-300">
-        <div className="absolute top-4 right-4">
-          <ThemeToggle />
-        </div>
-        <LoginForm onLoginSuccess={handleLogin} />
-      </div>
-    );
-  }
+  // Handle date range change from DateRangePicker
+  const handleDateRangeChange = (startDateStr, endDateStr) => {
+    fetchDailyData(startDateStr, endDateStr);
+  };
+
+  // Handle apply dates
+  const handleApplyDates = () => {
+    console.log("Apply button clicked - Manual date selection:", { 
+      dailyStartDate, 
+      dailyEndDate,
+      selectedAccount,
+      selectedLevel 
+    });
+    
+    clearData();
+    fetchDailyData();
+  };
+
+  // Initialize with today's data
+  useEffect(() => {
+    const todayStr = getTodayIST();
+    
+    setDailyStartDate(todayStr);
+    setDailyEndDate(todayStr);
+    setActiveDailyRange("today");
+    
+    // Load today's data immediately
+    fetchDailyData(todayStr, todayStr);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40 backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">📈</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Ad Reports Dashboard</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Analytics and Performance Insights</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <nav className="flex items-center space-x-2">
-                <a
-                  href="/daily-graphs"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-sm"
-                >
-                  <span>📊</span>
-                  <span>Daily Graphs</span>
-                </a>
-              </nav>
-              <ThemeToggle />
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            📊 Ad Reports Dashboard
+          </h1>
+          <p className="text-lg text-gray-700 dark:text-gray-200 max-w-2xl mx-auto">
+            Comprehensive analytics and insights for your advertising campaigns
+          </p>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Date Range Picker */}
         <DateRangePicker
           selectedAccount={selectedAccount}
@@ -274,6 +241,7 @@ export default function Home() {
           onClearData={clearData}
         />
 
+
         {/* Data Table */}
         <DataTable
           tableData={tableData}
@@ -287,7 +255,7 @@ export default function Home() {
 
         {/* Overview Cards */}
         <OverviewCards overview={overview} />
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
