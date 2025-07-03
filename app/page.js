@@ -388,7 +388,7 @@ export default function Home() {
         />
 
         {/* MMS Campaign Level Filters */}
-        {selectedAccount === "mms" && selectedLevel === "campaign" && (
+        {selectedAccount === "mms" && selectedLevel === "campaign" && tableData.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 mt-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <span>🔍</span>
