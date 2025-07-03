@@ -32,12 +32,24 @@ export default function DailyGraphs() {
   const [dailyStartDate, setDailyStartDate] = useState("");
   const [dailyEndDate, setDailyEndDate] = useState("");
   const [chartData, setChartData] = useState([]);
+  const [ageData, setAgeData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeRange, setActiveRange] = useState("last7");
   const [analysis, setAnalysis] = useState("");
   const [analyzingData, setAnalyzingData] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState("default");
   const [selectedLevel, setSelectedLevel] = useState("account");
+  
+  // Calculate summary metrics
+  const calculateSummaryMetrics = () => {
+    if (!chartData.length) return { totalSpend: 0, totalPurchases: 0, costPerPurchase: 0 };
+    
+    const totalSpend = chartData.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
+    const totalPurchases = chartData.reduce((sum, item) => sum + getActionValue(item.actions, 'purchase'), 0);
+    const costPerPurchase = totalPurchases > 0 ? totalSpend / totalPurchases : 0;
+    
+    return { totalSpend, totalPurchases, costPerPurchase };
+  };
 
   const getActionValue = (actions, actionType) => {
     if (!actions || !Array.isArray(actions)) return 0;
@@ -142,6 +154,39 @@ export default function DailyGraphs() {
       console.log("Graph data:", allCampaigns);
       const sortedData = allCampaigns.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
       setChartData(sortedData);
+
+      // Fetch age breakdown data
+      try {
+        const ageFields = selectedLevel === "campaign" 
+          ? "campaign_id,campaign_name,spend,impressions,clicks,actions"
+          : "spend,impressions,clicks,actions";
+          
+        const ageParams = new URLSearchParams({
+          start_date: dailyStartDate,
+          end_date: dailyEndDate,
+          per_day: "false",
+          account: selectedAccount,
+          level: selectedLevel,
+          fields: ageFields,
+          breakdowns: "age"
+        });
+        
+        const ageResponse = await fetch(`/api/daily-reports?${ageParams}`);
+        const ageResult = await ageResponse.json();
+        
+        if (ageResult?.data?.campaigns && Array.isArray(ageResult.data.campaigns)) {
+          console.log("Age breakdown data:", ageResult.data.campaigns);
+          console.log("First age item structure:", ageResult.data.campaigns[0]);
+          console.log("Age field values:", ageResult.data.campaigns.map(item => ({ age: item.age, allKeys: Object.keys(item) })));
+          setAgeData(ageResult.data.campaigns);
+        } else {
+          console.log("Age data campaigns is not an array or is missing:", ageResult);
+          setAgeData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching age breakdown data:", error);
+        setAgeData([]);
+      }
       
       // AI analysis disabled for now
       // if (sortedData.length > 0) {
@@ -218,6 +263,100 @@ export default function DailyGraphs() {
           backgroundColor: color + '20',
           tension: 0.1,
           fill: true,
+        },
+      ],
+    };
+  };
+
+  const generateAgeChartData = () => {
+    if (!ageData.length) return null;
+
+    // Define official Meta API age brackets
+    const ageBrackets = {
+      '13-17': 0,
+      '18-24': 0,
+      '25-34': 0,
+      '35-44': 0,
+      '45-54': 0,
+      '55-64': 0,
+      '65+': 0,
+      'unknown': 0
+    };
+
+    // Helper function to normalize age bracket from Meta API
+    const normalizeAgeBracket = (age) => {
+      if (!age) return 'unknown';
+      
+      // Age comes directly as bracket string like "45-54", just normalize the case
+      const ageStr = age.toString().trim();
+      
+      // Check if it's a valid age bracket
+      if (ageBrackets.hasOwnProperty(ageStr)) {
+        return ageStr;
+      }
+      
+      // Handle lowercase unknown
+      if (ageStr.toLowerCase() === 'unknown') return 'unknown';
+      
+      return 'unknown';
+    };
+
+    // Aggregate purchases by age brackets
+    ageData.forEach(item => {
+      const age = item.age;
+      const ageBracket = normalizeAgeBracket(age);
+      
+      // Look for purchase actions only
+      const purchases = getActionValue(item.actions, 'purchase');
+      
+      console.log("Age processing:", { 
+        ageBracket: age, 
+        normalizedBracket: ageBracket, 
+        purchases,
+        actions: item.actions?.map(a => a.action_type),
+        itemKeys: Object.keys(item)
+      });
+      
+      ageBrackets[ageBracket] += purchases;
+    });
+
+    console.log("Final age brackets:", ageBrackets);
+
+    // Convert to arrays and sort by purchase count
+    const sortedBrackets = Object.entries(ageBrackets)
+      .sort(([,a], [,b]) => b - a)
+      .filter(([, purchases]) => purchases > 0); // Only show brackets with purchases
+
+    const labels = sortedBrackets.map(([bracket]) => bracket);
+    const data = sortedBrackets.map(([, purchases]) => purchases);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Purchases by Age Bracket',
+          data,
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.8)',   // 13-17
+            'rgba(54, 162, 235, 0.8)',   // 18-24
+            'rgba(255, 205, 86, 0.8)',   // 25-34
+            'rgba(75, 192, 192, 0.8)',   // 35-44
+            'rgba(153, 102, 255, 0.8)',  // 45-54
+            'rgba(255, 159, 64, 0.8)',   // 55-64
+            'rgba(199, 199, 199, 0.8)',  // 65+
+            'rgba(83, 102, 255, 0.8)'    // unknown
+          ],
+          borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 205, 86, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(153, 102, 255, 1)',
+            'rgba(255, 159, 64, 1)',
+            'rgba(199, 199, 199, 1)',
+            'rgba(83, 102, 255, 1)'
+          ],
+          borderWidth: 1,
         },
       ],
     };
@@ -488,6 +627,68 @@ export default function DailyGraphs() {
           </div>
         </div>
 
+        {/* Summary Cards */}
+        {chartData.length > 0 && (() => {
+          const { totalSpend, totalPurchases, costPerPurchase } = calculateSummaryMetrics();
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Total Spend Card */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                    Total Spend
+                  </h3>
+                  <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <span className="text-white text-sm">💰</span>
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  ₹{Math.round(totalSpend).toLocaleString()}
+                </p>
+                <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                  Total campaign spend
+                </div>
+              </div>
+
+              {/* Total Purchases Card */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                    Total Purchases
+                  </h3>
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <span className="text-white text-sm">🛒</span>
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {totalPurchases.toLocaleString()}
+                </p>
+                <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                  Total conversions
+                </div>
+              </div>
+
+              {/* Cost Per Purchase Card */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                    Cost Per Purchase
+                  </h3>
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <span className="text-white text-sm">📊</span>
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  ₹{Math.round(costPerPurchase).toLocaleString()}
+                </p>
+                <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                  Average cost per conversion
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Loading State */}
         {loading && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -721,6 +922,62 @@ export default function DailyGraphs() {
                 />
               </div>
             </div>
+
+            {/* Top Performing Age Brackets Chart */}
+            {ageData.length > 0 && generateAgeChartData() && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center mb-6">
+                  <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center mr-3">
+                    <span className="text-white text-sm">👥</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Age Brackets Performance (Purchases)</h3>
+                </div>
+                <div className="h-64">
+                  <Bar
+                    data={generateAgeChartData()}
+                    options={{
+                      ...getChartOptions(),
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        ...getChartOptions().plugins,
+                        legend: { display: false },
+                        title: {
+                          display: true,
+                          text: 'Age Brackets by Purchase Count',
+                          color: theme === 'dark' ? '#ffffff' : '#374151',
+                          font: { size: 14, weight: 'bold' }
+                        }
+                      },
+                      scales: {
+                        ...getChartOptions().scales,
+                        x: {
+                          ...getChartOptions().scales.x,
+                          title: {
+                            display: true,
+                            text: 'Age Brackets',
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280'
+                          }
+                        },
+                        y: {
+                          ...getChartOptions().scales.y,
+                          title: {
+                            display: true,
+                            text: 'Number of Purchases',
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280'
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Empty placeholder for odd number of charts to maintain grid layout */}
+            {ageData.length > 0 && generateAgeChartData() && (
+              <div></div>
+            )}
           </div>
         )}
 

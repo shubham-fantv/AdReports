@@ -43,6 +43,7 @@ export async function GET(req) {
   const account = searchParams.get("account") || "default";
   const level = searchParams.get("level") || "account";
   const fields = searchParams.get("fields");
+  const breakdowns = searchParams.get("breakdowns");
   
   // Select credentials based on account
   const accessToken = account === "mms" 
@@ -100,6 +101,11 @@ export async function GET(req) {
       level: level,
       action_breakdowns: "action_type"
     });
+    
+    // Add breakdowns parameter if provided
+    if (breakdowns) {
+      params.append('breakdowns', breakdowns);
+    }
     
     // Add time_range as separate parameters to match Facebook API format
     params.append('time_range[since]', since);
@@ -218,6 +224,11 @@ export async function GET(req) {
         level: level,
         action_breakdowns: "action_type"
       });
+      
+      // Add breakdowns parameter if provided
+      if (breakdowns) {
+        aggregateParams.append('breakdowns', breakdowns);
+      }
       
       // Add time_range as separate parameters to match Facebook API format
       aggregateParams.append('time_range[since]', since);
