@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Line, Bar } from "react-chartjs-2";
+import { Line, Bar, Scatter, Pie } from "react-chartjs-2";
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../contexts/ThemeContext';
 import {
@@ -10,6 +10,7 @@ import {
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -21,6 +22,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
@@ -33,6 +35,7 @@ export default function DailyGraphs() {
   const [dailyEndDate, setDailyEndDate] = useState("");
   const [chartData, setChartData] = useState([]);
   const [ageData, setAgeData] = useState([]);
+  const [genderData, setGenderData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeRange, setActiveRange] = useState("last7");
   const [analysis, setAnalysis] = useState("");
@@ -49,6 +52,45 @@ export default function DailyGraphs() {
     const costPerPurchase = totalPurchases > 0 ? totalSpend / totalPurchases : 0;
     
     return { totalSpend, totalPurchases, costPerPurchase };
+  };
+
+  const calculateMmsMetrics = () => {
+    if (!chartData.length) return { 
+      totalSpend: 0, 
+      totalSales: 0, 
+      totalPurchases: 0, 
+      roas: 0, 
+      costPerPurchase: 0, 
+      avgCpm: 0, 
+      avgCpc: 0 
+    };
+    
+    const totalSpend = chartData.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
+    const totalPurchases = chartData.reduce((sum, item) => sum + getActionValue(item.actions, 'purchase'), 0);
+    
+    // Calculate sales: India purchases * 499, US purchases * 1700
+    // For now, assume all purchases are India (can be enhanced with geo data later)
+    const totalSales = totalPurchases * 499; // Assuming all are India purchases for now
+    
+    const roas = totalSpend > 0 ? totalSales / totalSpend : 0;
+    const costPerPurchase = totalPurchases > 0 ? totalSpend / totalPurchases : 0;
+    
+    // Calculate average CPM and CPC
+    const totalImpressions = chartData.reduce((sum, item) => sum + parseFloat(item.impressions || 0), 0);
+    const totalClicks = chartData.reduce((sum, item) => sum + parseFloat(item.clicks || 0), 0);
+    
+    const avgCpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
+    const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
+    
+    return { 
+      totalSpend, 
+      totalSales, 
+      totalPurchases, 
+      roas, 
+      costPerPurchase, 
+      avgCpm, 
+      avgCpc 
+    };
   };
 
   const getActionValue = (actions, actionType) => {
@@ -186,6 +228,39 @@ export default function DailyGraphs() {
       } catch (error) {
         console.error("Error fetching age breakdown data:", error);
         setAgeData([]);
+      }
+
+      // Fetch gender breakdown data
+      try {
+        const genderFields = selectedLevel === "campaign" 
+          ? "campaign_id,campaign_name,spend,impressions,clicks,actions"
+          : "spend,impressions,clicks,actions";
+          
+        const genderParams = new URLSearchParams({
+          start_date: dailyStartDate,
+          end_date: dailyEndDate,
+          per_day: "false",
+          account: selectedAccount,
+          level: selectedLevel,
+          fields: genderFields,
+          breakdowns: "gender"
+        });
+        
+        const genderResponse = await fetch(`/api/daily-reports?${genderParams}`);
+        const genderResult = await genderResponse.json();
+        
+        if (genderResult?.data?.campaigns && Array.isArray(genderResult.data.campaigns)) {
+          console.log("Gender breakdown data:", genderResult.data.campaigns);
+          console.log("First gender item structure:", genderResult.data.campaigns[0]);
+          console.log("Gender field values:", genderResult.data.campaigns.map(item => ({ gender: item.gender, allKeys: Object.keys(item) })));
+          setGenderData(genderResult.data.campaigns);
+        } else {
+          console.log("Gender data campaigns is not an array or is missing:", genderResult);
+          setGenderData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching gender breakdown data:", error);
+        setGenderData([]);
       }
       
       // AI analysis disabled for now
@@ -357,6 +432,305 @@ export default function DailyGraphs() {
             'rgba(83, 102, 255, 1)'
           ],
           borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  const generateSpendVsPurchaseChartData = () => {
+    if (!chartData.length) return null;
+
+    // Sort data by date
+    const sortedData = chartData.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+    
+    const labels = sortedData.map(item => {
+      const date = new Date(item.date_start);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+
+    const spendData = sortedData.map(item => parseFloat(item.spend || 0));
+    const purchaseData = sortedData.map(item => getActionValue(item.actions, 'purchase'));
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Spend (₹)',
+          data: spendData,
+          borderColor: 'rgb(239, 68, 68)',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          yAxisID: 'y',
+          tension: 0.1,
+          fill: false,
+        },
+        {
+          label: 'Purchases',
+          data: purchaseData,
+          borderColor: 'rgb(34, 197, 94)',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          yAxisID: 'y1',
+          tension: 0.1,
+          fill: false,
+        },
+      ],
+    };
+  };
+
+  const generateSpendVsPurchaseScatterData = () => {
+    if (!chartData.length) return null;
+
+    const scatterData = chartData.map(item => {
+      const spend = parseFloat(item.spend || 0);
+      const purchases = getActionValue(item.actions, 'purchase');
+      const date = new Date(item.date_start);
+      const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      return {
+        x: spend,
+        y: purchases,
+        label: dateLabel
+      };
+    });
+
+    // Calculate trend line using linear regression
+    const n = scatterData.length;
+    const sumX = scatterData.reduce((sum, point) => sum + point.x, 0);
+    const sumY = scatterData.reduce((sum, point) => sum + point.y, 0);
+    const sumXY = scatterData.reduce((sum, point) => sum + (point.x * point.y), 0);
+    const sumXX = scatterData.reduce((sum, point) => sum + (point.x * point.x), 0);
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    // Find min and max X values for trend line
+    const minX = Math.min(...scatterData.map(point => point.x));
+    const maxX = Math.max(...scatterData.map(point => point.x));
+
+    const trendLineData = [
+      { x: minX, y: slope * minX + intercept },
+      { x: maxX, y: slope * maxX + intercept }
+    ];
+
+    return {
+      datasets: [
+        {
+          label: 'Spend vs Purchases',
+          data: scatterData,
+          backgroundColor: 'rgba(99, 102, 241, 0.7)',
+          borderColor: 'rgb(99, 102, 241)',
+          borderWidth: 2,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          showLine: false,
+        },
+        {
+          label: 'Trend Line',
+          data: trendLineData,
+          backgroundColor: 'rgba(239, 68, 68, 0.2)',
+          borderColor: 'rgb(239, 68, 68)',
+          borderWidth: 3,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          showLine: true,
+          fill: false,
+          type: 'line',
+        },
+      ],
+    };
+  };
+
+  const generateClicksVsCtrChartData = () => {
+    if (!chartData.length) return null;
+
+    // Sort data by date
+    const sortedData = chartData.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+    
+    const labels = sortedData.map(item => {
+      const date = new Date(item.date_start);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+
+    const clicksData = sortedData.map(item => parseFloat(item.clicks || 0));
+    const ctrData = sortedData.map(item => parseFloat(item.ctr || 0));
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Daily Clicks',
+          type: 'bar',
+          data: clicksData,
+          backgroundColor: 'rgba(34, 197, 94, 0.7)',
+          borderColor: 'rgb(34, 197, 94)',
+          borderWidth: 1,
+          yAxisID: 'y1',
+        },
+        {
+          label: 'Click-Through Rate (%)',
+          type: 'line',
+          data: ctrData,
+          borderColor: 'rgb(239, 68, 68)',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          yAxisID: 'y',
+          tension: 0.1,
+          fill: false,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+      ],
+    };
+  };
+
+  const generateAgeSpendPieChartData = () => {
+    if (!ageData.length) return null;
+
+    // Define official Meta API age brackets
+    const ageBrackets = {
+      '13-17': 0,
+      '18-24': 0,
+      '25-34': 0,
+      '35-44': 0,
+      '45-54': 0,
+      '55-64': 0,
+      '65+': 0,
+      'unknown': 0
+    };
+
+    // Helper function to normalize age bracket from Meta API
+    const normalizeAgeBracket = (age) => {
+      if (!age) return 'unknown';
+      
+      const ageStr = age.toString().trim();
+      
+      if (ageBrackets.hasOwnProperty(ageStr)) {
+        return ageStr;
+      }
+      
+      if (ageStr.toLowerCase() === 'unknown') return 'unknown';
+      
+      return 'unknown';
+    };
+
+    // Aggregate spend by age brackets
+    ageData.forEach(item => {
+      const age = item.age;
+      const ageBracket = normalizeAgeBracket(age);
+      const spend = parseFloat(item.spend || 0);
+      
+      ageBrackets[ageBracket] += spend;
+    });
+
+    // Filter out age brackets with no spend and prepare data
+    const filteredBrackets = Object.entries(ageBrackets)
+      .filter(([, spend]) => spend > 0)
+      .sort(([,a], [,b]) => b - a);
+
+    if (filteredBrackets.length === 0) return null;
+
+    const labels = filteredBrackets.map(([bracket]) => bracket);
+    const data = filteredBrackets.map(([, spend]) => spend);
+
+    // Define colors for age brackets
+    const colors = [
+      'rgba(255, 99, 132, 0.8)',   // Red
+      'rgba(54, 162, 235, 0.8)',   // Blue
+      'rgba(255, 205, 86, 0.8)',   // Yellow
+      'rgba(75, 192, 192, 0.8)',   // Teal
+      'rgba(153, 102, 255, 0.8)',  // Purple
+      'rgba(255, 159, 64, 0.8)',   // Orange
+      'rgba(199, 199, 199, 0.8)',  // Gray
+      'rgba(83, 102, 255, 0.8)'    // Indigo
+    ];
+
+    const borderColors = [
+      'rgba(255, 99, 132, 1)',
+      'rgba(54, 162, 235, 1)',
+      'rgba(255, 205, 86, 1)',
+      'rgba(75, 192, 192, 1)',
+      'rgba(153, 102, 255, 1)',
+      'rgba(255, 159, 64, 1)',
+      'rgba(199, 199, 199, 1)',
+      'rgba(83, 102, 255, 1)'
+    ];
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Spend by Age Group',
+          data,
+          backgroundColor: colors.slice(0, labels.length),
+          borderColor: borderColors.slice(0, labels.length),
+          borderWidth: 2,
+        },
+      ],
+    };
+  };
+
+  const generateGenderPurchasePieChartData = () => {
+    if (!genderData.length) return null;
+
+    // Define gender categories
+    const genderCategories = {
+      'male': 0,
+      'female': 0,
+      'unknown': 0
+    };
+
+    // Helper function to normalize gender from Meta API
+    const normalizeGender = (gender) => {
+      if (!gender) return 'unknown';
+      
+      const genderStr = gender.toString().toLowerCase().trim();
+      
+      if (genderCategories.hasOwnProperty(genderStr)) {
+        return genderStr;
+      }
+      
+      return 'unknown';
+    };
+
+    // Aggregate purchases by gender
+    genderData.forEach(item => {
+      const gender = item.gender;
+      const genderCategory = normalizeGender(gender);
+      const purchases = getActionValue(item.actions, 'purchase');
+      
+      genderCategories[genderCategory] += purchases;
+    });
+
+    // Filter out genders with no purchases and prepare data
+    const filteredGenders = Object.entries(genderCategories)
+      .filter(([, purchases]) => purchases > 0)
+      .sort(([,a], [,b]) => b - a);
+
+    if (filteredGenders.length === 0) return null;
+
+    const labels = filteredGenders.map(([gender]) => gender.charAt(0).toUpperCase() + gender.slice(1));
+    const data = filteredGenders.map(([, purchases]) => purchases);
+
+    // Define colors for genders
+    const colors = [
+      'rgba(59, 130, 246, 0.8)',   // Blue for Male
+      'rgba(236, 72, 153, 0.8)',   // Pink for Female
+      'rgba(156, 163, 175, 0.8)',  // Gray for Unknown
+    ];
+
+    const borderColors = [
+      'rgba(59, 130, 246, 1)',
+      'rgba(236, 72, 153, 1)',
+      'rgba(156, 163, 175, 1)',
+    ];
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Purchases by Gender',
+          data,
+          backgroundColor: colors.slice(0, labels.length),
+          borderColor: borderColors.slice(0, labels.length),
+          borderWidth: 2,
         },
       ],
     };
@@ -627,31 +1001,212 @@ export default function DailyGraphs() {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        {chartData.length > 0 && (() => {
-          const { totalSpend, totalPurchases, costPerPurchase } = calculateSummaryMetrics();
+        {/* MMS Cards - Only show for MMS account and account level */}
+        {selectedAccount === "mms" && selectedLevel === "account" && chartData.length > 0 && (() => {
+          const { totalSpend, totalSales, totalPurchases, roas, costPerPurchase, avgCpm, avgCpc } = calculateMmsMetrics();
           return (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {/* Total Spend Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                    Total Spend
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">MMS Performance Overview</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* Column 1: Ad Spends vs Revenue */}
+                <div className="bg-gradient-to-br from-red-50 to-green-50 dark:from-red-900/20 dark:to-green-900/20 rounded-3xl p-5 shadow-sm border border-red-100 dark:border-red-800/30">
+                  <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4 text-center uppercase tracking-wide">
+                    Ad Spends vs Revenue
                   </h3>
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <span className="text-white text-sm">💰</span>
+                  <div className="space-y-4">
+                    {/* Ad Spend Card */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                          Ad Spend
+                        </h4>
+                        <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                          <span className="text-white text-sm">💳</span>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        ₹{Math.round(totalSpend).toLocaleString()}
+                      </p>
+                      <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                        Total advertising spend
+                      </div>
+                    </div>
+
+                    {/* Sales Card */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                          Sales Revenue
+                        </h4>
+                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                          <span className="text-white text-sm">💰</span>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        ₹{Math.round(totalSales).toLocaleString()}
+                      </p>
+                      <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                        India: ₹499/purchase • US: ₹1700/purchase
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ₹{Math.round(totalSpend).toLocaleString()}
-                </p>
-                <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
-                  Total campaign spend
-                </div>
-              </div>
 
+                {/* Column 2: ROAS vs Cost Per Purchase */}
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-3xl p-5 shadow-sm border border-blue-100 dark:border-blue-800/30">
+                  <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4 text-center uppercase tracking-wide">
+                    ROAS vs Cost Per Purchase
+                  </h3>
+                  <div className="space-y-4">
+                    {/* ROAS Card */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                          ROAS
+                        </h4>
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                          <span className="text-white text-sm">📈</span>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {roas.toFixed(2)}x
+                      </p>
+                      <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                        Return on Ad Spend
+                      </div>
+                    </div>
+
+                    {/* Cost Per Purchase Card */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                          Cost Per Purchase
+                        </h4>
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                          <span className="text-white text-sm">🎯</span>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        ₹{Math.round(costPerPurchase).toLocaleString()}
+                      </p>
+                      <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                        Average acquisition cost
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 3: CPM vs CPC */}
+                <div className="bg-gradient-to-br from-orange-50 to-teal-50 dark:from-orange-900/20 dark:to-teal-900/20 rounded-3xl p-5 shadow-sm border border-orange-100 dark:border-orange-800/30">
+                  <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4 text-center uppercase tracking-wide">
+                    CPM vs CPC
+                  </h3>
+                  <div className="space-y-4">
+                    {/* CPM Card */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                          CPM
+                        </h4>
+                        <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                          <span className="text-white text-sm">👁️</span>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        ₹{avgCpm.toFixed(2)}
+                      </p>
+                      <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                        Cost per 1000 impressions
+                      </div>
+                    </div>
+
+                    {/* CPC Card */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                          CPC
+                        </h4>
+                        <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                          <span className="text-white text-sm">👆</span>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        ₹{avgCpc.toFixed(2)}
+                      </p>
+                      <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                        Cost per click
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* VideoNation Cards - Only show for default account and account level */}
+        {selectedAccount === "default" && selectedLevel === "account" && chartData.length > 0 && (() => {
+          const { totalSpend } = calculateSummaryMetrics();
+          
+          // Calculate average CPC
+          const totalClicks = chartData.reduce((sum, item) => sum + parseFloat(item.clicks || 0), 0);
+          const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
+          
+          return (
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">VideoNation Performance Overview</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Total Spend Card */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                      Total Spend
+                    </h3>
+                    <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                      <span className="text-white text-sm">💰</span>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    ₹{Math.round(totalSpend).toLocaleString()}
+                  </p>
+                  <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                    Total advertising spend
+                  </div>
+                </div>
+
+                {/* Average CPC Card */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                      Average CPC
+                    </h3>
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                      <span className="text-white text-sm">👆</span>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    ₹{avgCpc.toFixed(2)}
+                  </p>
+                  <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                    Cost per click
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Summary Cards */}
+        {chartData.length > 0 && (() => {
+          const { totalPurchases } = calculateSummaryMetrics();
+          return (
+            <div className="grid grid-cols-1 gap-6 mb-8">
               {/* Total Purchases Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group max-w-md mx-auto">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                     Total Purchases
@@ -665,24 +1220,6 @@ export default function DailyGraphs() {
                 </p>
                 <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
                   Total conversions
-                </div>
-              </div>
-
-              {/* Cost Per Purchase Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                    Cost Per Purchase
-                  </h3>
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <span className="text-white text-sm">📊</span>
-                  </div>
-                </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ₹{Math.round(costPerPurchase).toLocaleString()}
-                </p>
-                <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
-                  Average cost per conversion
                 </div>
               </div>
             </div>
@@ -1137,6 +1674,557 @@ export default function DailyGraphs() {
             )}
           </div>
         )}
+
+        {/* Age Spend Distribution Pie Chart - Only show for MMS account and account level */}
+        {selectedAccount === "mms" && selectedLevel === "account" && ageData.length > 0 && (() => {
+          const ageSpendPieData = generateAgeSpendPieChartData();
+          if (!ageSpendPieData) return null;
+          
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spend Distribution by Age Groups</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pie chart showing advertising spend allocation across different age demographics</p>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Total Age Groups: {ageSpendPieData.labels.length}
+                </div>
+              </div>
+              
+              <div className="flex flex-col lg:flex-row items-center gap-8">
+                <div className="w-full lg:w-1/2 h-80">
+                  <Pie
+                    data={ageSpendPieData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          display: false,
+                        },
+                        tooltip: {
+                          backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                          titleColor: theme === 'dark' ? '#ffffff' : '#000000',
+                          bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
+                          borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+                          borderWidth: 1,
+                          callbacks: {
+                            label: function(context) {
+                              const label = context.label || '';
+                              const value = context.parsed;
+                              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                              const percentage = ((value / total) * 100).toFixed(1);
+                              return `${label}: ₹${value.toLocaleString()} (${percentage}%)`;
+                            }
+                          }
+                        }
+                      },
+                    }}
+                  />
+                </div>
+                
+                <div className="w-full lg:w-1/2">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Age Group Breakdown</h4>
+                  <div className="space-y-3">
+                    {ageSpendPieData.labels.map((label, index) => {
+                      const value = ageSpendPieData.datasets[0].data[index];
+                      const total = ageSpendPieData.datasets[0].data.reduce((a, b) => a + b, 0);
+                      const percentage = ((value / total) * 100).toFixed(1);
+                      const color = ageSpendPieData.datasets[0].backgroundColor[index];
+                      
+                      return (
+                        <div key={label} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="flex items-center">
+                            <div 
+                              className="w-4 h-4 rounded-full mr-3"
+                              style={{ backgroundColor: color }}
+                            ></div>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {label} years
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                              ₹{value.toLocaleString()}
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {percentage}%
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Gender Purchase Distribution Pie Chart - Only show for MMS account and account level */}
+        {selectedAccount === "mms" && selectedLevel === "account" && genderData.length > 0 && (() => {
+          const genderPurchasePieData = generateGenderPurchasePieChartData();
+          if (!genderPurchasePieData) return null;
+          
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Purchase Distribution by Gender</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pie chart showing purchase conversions across different gender demographics</p>
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Total Genders: {genderPurchasePieData.labels.length}
+                </div>
+              </div>
+              
+              <div className="flex flex-col lg:flex-row items-center gap-8">
+                <div className="w-full lg:w-1/2 h-80">
+                  <Pie
+                    data={genderPurchasePieData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          display: false,
+                        },
+                        tooltip: {
+                          backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                          titleColor: theme === 'dark' ? '#ffffff' : '#000000',
+                          bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
+                          borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+                          borderWidth: 1,
+                          callbacks: {
+                            label: function(context) {
+                              const label = context.label || '';
+                              const value = context.parsed;
+                              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                              const percentage = ((value / total) * 100).toFixed(1);
+                              return `${label}: ${value.toLocaleString()} purchases (${percentage}%)`;
+                            }
+                          }
+                        }
+                      },
+                    }}
+                  />
+                </div>
+                
+                <div className="w-full lg:w-1/2">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Gender Breakdown</h4>
+                  <div className="space-y-3">
+                    {genderPurchasePieData.labels.map((label, index) => {
+                      const value = genderPurchasePieData.datasets[0].data[index];
+                      const total = genderPurchasePieData.datasets[0].data.reduce((a, b) => a + b, 0);
+                      const percentage = ((value / total) * 100).toFixed(1);
+                      const color = genderPurchasePieData.datasets[0].backgroundColor[index];
+                      
+                      return (
+                        <div key={label} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="flex items-center">
+                            <div 
+                              className="w-4 h-4 rounded-full mr-3"
+                              style={{ backgroundColor: color }}
+                            ></div>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {label}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {value.toLocaleString()} purchases
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {percentage}%
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Spend vs Purchase Chart - Only show for MMS account and account level */}
+        {selectedAccount === "mms" && selectedLevel === "account" && chartData.length > 0 && (() => {
+          const spendVsPurchaseData = generateSpendVsPurchaseChartData();
+          if (!spendVsPurchaseData) return null;
+          
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spend vs Purchases Over Time</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Daily comparison of advertising spend and purchase conversions</p>
+                </div>
+                <div className="flex items-center space-x-4 text-xs">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Spend (₹)</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Purchases</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="h-80">
+                <Line
+                  data={spendVsPurchaseData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                      mode: 'index',
+                      intersect: false,
+                    },
+                    plugins: {
+                      legend: {
+                        display: false,
+                      },
+                      tooltip: {
+                        backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                        titleColor: theme === 'dark' ? '#ffffff' : '#000000',
+                        bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
+                        borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+                        borderWidth: 1,
+                      }
+                    },
+                    scales: {
+                      x: {
+                        display: true,
+                        title: {
+                          display: true,
+                          text: 'Date',
+                          color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                          font: {
+                            size: 12,
+                            weight: 'bold'
+                          }
+                        },
+                        grid: {
+                          color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+                        },
+                        ticks: {
+                          color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                          font: {
+                            size: 11
+                          }
+                        }
+                      },
+                      y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                          display: true,
+                          text: 'Spend (₹)',
+                          color: 'rgb(239, 68, 68)',
+                          font: {
+                            size: 12,
+                            weight: 'bold'
+                          }
+                        },
+                        grid: {
+                          color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+                        },
+                        ticks: {
+                          color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                          font: {
+                            size: 11
+                          },
+                          callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                          }
+                        }
+                      },
+                      y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                          display: true,
+                          text: 'Purchases',
+                          color: 'rgb(34, 197, 94)',
+                          font: {
+                            size: 12,
+                            weight: 'bold'
+                          }
+                        },
+                        grid: {
+                          drawOnChartArea: false,
+                        },
+                        ticks: {
+                          color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                          font: {
+                            size: 11
+                          }
+                        }
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Side-by-Side Charts - Only show for MMS account and account level */}
+        {selectedAccount === "mms" && selectedLevel === "account" && chartData.length > 0 && (() => {
+          const scatterData = generateSpendVsPurchaseScatterData();
+          const clicksVsCtrData = generateClicksVsCtrChartData();
+          if (!scatterData || !clicksVsCtrData) return null;
+          
+          return (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              
+              {/* Spend vs Purchase Scatter Plot */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex flex-col mb-6">
+                  <div className="mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spend vs Purchases Correlation</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Scatter plot showing correlation between daily spend and purchase conversions</p>
+                  </div>
+                  <div className="flex items-center space-x-4 text-xs">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-indigo-500 rounded-full mr-2"></div>
+                      <span className="text-gray-600 dark:text-gray-400">Daily Performance</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-0.5 bg-red-500 mr-2"></div>
+                      <span className="text-gray-600 dark:text-gray-400">Trend Line</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="h-80">
+                  <Scatter
+                    data={scatterData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: {
+                        mode: 'point',
+                      },
+                      plugins: {
+                        legend: {
+                          display: false,
+                        },
+                        tooltip: {
+                          backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                          titleColor: theme === 'dark' ? '#ffffff' : '#000000',
+                          bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
+                          borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+                          borderWidth: 1,
+                          callbacks: {
+                            title: function(context) {
+                              const point = context[0];
+                              return point.raw.label || 'Data Point';
+                            },
+                            label: function(context) {
+                              return [
+                                `Spend: ₹${context.parsed.x.toLocaleString()}`,
+                                `Purchases: ${context.parsed.y}`
+                              ];
+                            }
+                          }
+                        }
+                      },
+                      scales: {
+                        x: {
+                          type: 'linear',
+                          display: true,
+                          title: {
+                            display: true,
+                            text: 'Spend (₹)',
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                            font: {
+                              size: 11,
+                              weight: 'bold'
+                            }
+                          },
+                          grid: {
+                            color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+                          },
+                          ticks: {
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                            font: {
+                              size: 10
+                            },
+                            callback: function(value) {
+                              return '₹' + (value >= 1000 ? (value/1000).toFixed(0) + 'k' : value);
+                            }
+                          }
+                        },
+                        y: {
+                          type: 'linear',
+                          display: true,
+                          title: {
+                            display: true,
+                            text: 'Purchases',
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                            font: {
+                              size: 11,
+                              weight: 'bold'
+                            }
+                          },
+                          grid: {
+                            color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+                          },
+                          ticks: {
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                            font: {
+                              size: 10
+                            }
+                          }
+                        },
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Clicks vs CTR Dual-Axis Chart */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex flex-col mb-6">
+                  <div className="mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Daily Clicks vs Click-Through Rate</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Bar chart for daily clicks with CTR line overlay showing engagement performance</p>
+                  </div>
+                  <div className="flex items-center space-x-4 text-xs">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 mr-2"></div>
+                      <span className="text-gray-600 dark:text-gray-400">Daily Clicks</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-0.5 bg-red-500 mr-2"></div>
+                      <span className="text-gray-600 dark:text-gray-400">CTR (%)</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="h-80">
+                  <Bar
+                    data={clicksVsCtrData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: {
+                        mode: 'index',
+                        intersect: false,
+                      },
+                      plugins: {
+                        legend: {
+                          display: false,
+                        },
+                        tooltip: {
+                          backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                          titleColor: theme === 'dark' ? '#ffffff' : '#000000',
+                          bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
+                          borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+                          borderWidth: 1,
+                          callbacks: {
+                            label: function(context) {
+                              const datasetLabel = context.dataset.label;
+                              const value = context.parsed.y;
+                              if (datasetLabel === 'Daily Clicks') {
+                                return `Clicks: ${value.toLocaleString()}`;
+                              } else {
+                                return `CTR: ${value.toFixed(2)}%`;
+                              }
+                            }
+                          }
+                        }
+                      },
+                      scales: {
+                        x: {
+                          display: true,
+                          title: {
+                            display: true,
+                            text: 'Date',
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                            font: {
+                              size: 11,
+                              weight: 'bold'
+                            }
+                          },
+                          grid: {
+                            color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+                          },
+                          ticks: {
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                            font: {
+                              size: 10
+                            }
+                          }
+                        },
+                        y: {
+                          type: 'linear',
+                          display: true,
+                          position: 'left',
+                          title: {
+                            display: true,
+                            text: 'CTR (%)',
+                            color: 'rgb(239, 68, 68)',
+                            font: {
+                              size: 11,
+                              weight: 'bold'
+                            }
+                          },
+                          grid: {
+                            color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+                          },
+                          ticks: {
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                            font: {
+                              size: 10
+                            },
+                            callback: function(value) {
+                              return value.toFixed(1) + '%';
+                            }
+                          }
+                        },
+                        y1: {
+                          type: 'linear',
+                          display: true,
+                          position: 'right',
+                          title: {
+                            display: true,
+                            text: 'Clicks',
+                            color: 'rgb(34, 197, 94)',
+                            font: {
+                              size: 11,
+                              weight: 'bold'
+                            }
+                          },
+                          grid: {
+                            drawOnChartArea: false,
+                          },
+                          ticks: {
+                            color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+                            font: {
+                              size: 10
+                            },
+                            callback: function(value) {
+                              return value >= 1000 ? (value/1000).toFixed(0) + 'k' : value.toString();
+                            }
+                          }
+                        },
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+
+            </div>
+          );
+        })()}
+
       </main>
     </div>
   );
