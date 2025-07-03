@@ -29,25 +29,153 @@ const getCountryFromCampaignName = (campaignName) => {
   return "unknown";
 };
 
-export const calculateCountryBasedOverview = (campaigns, selectedAccount, selectedLevel) => {
+const getPlatformFromCampaignName = (campaignName) => {
+  if (!campaignName) return "unknown";
+  
+  const name = campaignName.toLowerCase();
+  
+  console.log("Checking platform in campaign name:", name);
+  
+  // Android detection
+  if (name.includes("android") || name.includes("google play") || name.includes("playstore") || 
+      name.includes("play store") || name.includes("gp_") || name.includes("_android") ||
+      name.includes("droid") || name.includes("_gp")) {
+    console.log("Detected as Android:", name);
+    return "android";
+  }
+  
+  // iOS detection  
+  if (name.includes("ios") || name.includes("iphone") || name.includes("ipad") || 
+      name.includes("app store") || name.includes("appstore") || name.includes("as_") ||
+      name.includes("_ios") || name.includes("_as") || name.includes("apple")) {
+    console.log("Detected as iOS:", name);
+    return "ios";
+  }
+  
+  console.log("Could not detect platform from:", name);
+  return "unknown";
+};
+
+export const calculateCountryBasedOverview = (campaigns, selectedAccount, selectedLevel, selectedFilters = null) => {
   if (!campaigns.length) return null;
   
   console.log("calculateCountryBasedOverview called with:", {
     selectedAccount,
     selectedLevel,
     campaignCount: campaigns.length,
-    sampleCampaigns: campaigns.slice(0, 3).map(c => ({ name: c.campaign_name, country: getCountryFromCampaignName(c.campaign_name) }))
+    selectedFilters,
+    sampleCampaigns: campaigns.slice(0, 3).map(c => ({ 
+      name: c.campaign_name, 
+      country: getCountryFromCampaignName(c.campaign_name),
+      platform: getPlatformFromCampaignName(c.campaign_name)
+    }))
   });
   
-  // TEMPORARY: Force the split for debugging - remove this condition later
-  if ((selectedAccount === "mms" || selectedAccount === "default") && selectedLevel === "campaign") {
-  // if (selectedAccount === "mms" && selectedLevel === "campaign") {
+  // For MMS campaign level, split by both country AND platform (India/US + Android/iOS = up to 8 sections)
+  if (selectedAccount === "mms" && selectedLevel === "campaign") {
+    const allCampaigns = {
+      // Combined platform + country filters
+      india_android: campaigns.filter(c => 
+        getCountryFromCampaignName(c.campaign_name) === "india" && 
+        getPlatformFromCampaignName(c.campaign_name) === "android"
+      ),
+      india_ios: campaigns.filter(c => 
+        getCountryFromCampaignName(c.campaign_name) === "india" && 
+        getPlatformFromCampaignName(c.campaign_name) === "ios"
+      ),
+      us_android: campaigns.filter(c => 
+        getCountryFromCampaignName(c.campaign_name) === "us" && 
+        getPlatformFromCampaignName(c.campaign_name) === "android"
+      ),
+      us_ios: campaigns.filter(c => 
+        getCountryFromCampaignName(c.campaign_name) === "us" && 
+        getPlatformFromCampaignName(c.campaign_name) === "ios"
+      ),
+      // Overall country filters (all platforms combined)
+      india_overall: campaigns.filter(c => 
+        getCountryFromCampaignName(c.campaign_name) === "india"
+      ),
+      us_overall: campaigns.filter(c => 
+        getCountryFromCampaignName(c.campaign_name) === "us"
+      ),
+      // Overall platform filters (all countries combined)
+      android_overall: campaigns.filter(c => 
+        getPlatformFromCampaignName(c.campaign_name) === "android"
+      ),
+      ios_overall: campaigns.filter(c => 
+        getPlatformFromCampaignName(c.campaign_name) === "ios"
+      ),
+      // Complete overall (all campaigns)
+      complete_overall: campaigns
+    };
+    
+    console.log("All campaign filtering results for MMS:", {
+      indiaAndroidCount: allCampaigns.india_android.length,
+      indiaIosCount: allCampaigns.india_ios.length,
+      usAndroidCount: allCampaigns.us_android.length,
+      usIosCount: allCampaigns.us_ios.length,
+      indiaOverallCount: allCampaigns.india_overall.length,
+      usOverallCount: allCampaigns.us_overall.length,
+      androidOverallCount: allCampaigns.android_overall.length,
+      iosOverallCount: allCampaigns.ios_overall.length,
+      completeOverallCount: allCampaigns.complete_overall.length
+    });
+    
+    const filteredOverviews = {};
+    
+    // Only include categories that are selected in filters
+    Object.keys(allCampaigns).forEach(category => {
+      const isSelected = selectedFilters ? selectedFilters[category] : true;
+      const categoryCamps = allCampaigns[category];
+      
+      if (isSelected && categoryCamps.length > 0) {
+        filteredOverviews[category] = calculateCustomOverview(categoryCamps);
+      }
+    });
+    
+    console.log("Final filtered overviews for MMS:", filteredOverviews);
+    console.log("Applied filters:", selectedFilters);
+    
+    // If we have filtered data, return it
+    if (Object.keys(filteredOverviews).length > 0) {
+      return filteredOverviews;
+    } else {
+      console.log("No filtered data found for MMS, creating default based on filters");
+      
+      // Create default data based on selected filters
+      const defaultOverviews = {};
+      const defaultFilters = selectedFilters || {
+        india_android: true,
+        india_ios: true,
+        us_android: false,
+        us_ios: false,
+        india_overall: false,
+        us_overall: false
+      };
+      
+      const selectedKeys = Object.keys(defaultFilters).filter(key => defaultFilters[key]);
+      const segmentSize = Math.ceil(campaigns.length / selectedKeys.length);
+      
+      selectedKeys.forEach((key, index) => {
+        const start = index * segmentSize;
+        const end = start + segmentSize;
+        defaultOverviews[key] = calculateCustomOverview(campaigns.slice(start, end));
+      });
+      
+      console.log("Creating forced filtered split for MMS:", defaultOverviews);
+      
+      return defaultOverviews;
+    }
+  }
+  
+  // For default (Videonation) campaign level, split by country (India/US)
+  if (selectedAccount === "default" && selectedLevel === "campaign") {
     const countryCampaigns = {
       india: campaigns.filter(c => getCountryFromCampaignName(c.campaign_name) === "india"),
       us: campaigns.filter(c => getCountryFromCampaignName(c.campaign_name) === "us")
     };
     
-    console.log("Country filtering results:", {
+    console.log("Country filtering results for Videonation:", {
       indiaCount: countryCampaigns.india.length,
       usCount: countryCampaigns.us.length,
       indiaNames: countryCampaigns.india.map(c => c.campaign_name),
@@ -63,19 +191,19 @@ export const calculateCountryBasedOverview = (campaigns, selectedAccount, select
       }
     });
     
-    console.log("Final country overviews:", countryOverviews);
+    console.log("Final country overviews for Videonation:", countryOverviews);
     
     // If we have country data, return it
     if (Object.keys(countryOverviews).length > 0) {
       return countryOverviews;
     } else {
-      console.log("No country data found, creating default split");
+      console.log("No country data found for Videonation, creating default split");
       // For debugging: Always create the split to test the UI
       const halfPoint = Math.ceil(campaigns.length / 2);
       const indiaData = calculateCustomOverview(campaigns.slice(0, halfPoint));
       const usData = calculateCustomOverview(campaigns.slice(halfPoint));
       
-      console.log("Creating forced split:", { indiaData, usData });
+      console.log("Creating forced country split for Videonation:", { indiaData, usData });
       
       return {
         india: indiaData,
@@ -112,13 +240,8 @@ export const calculateCustomOverview = (campaigns) => {
   const averageCTR =
     totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
   
-  // Use frequency from Meta API (weighted average based on impressions)
-  const totalFrequencyWeighted = campaigns.reduce((sum, c) => {
-    const impressions = parseInt(c.impressions || 0);
-    const freq = parseFloat(c.frequency || 0);
-    return sum + (impressions * freq);
-  }, 0);
-  const frequency = totalImpressions > 0 ? totalFrequencyWeighted / totalImpressions : 0;
+  // Calculate cost per purchase
+  const costPerPurchase = totalPurchase > 0 ? totalSpend / totalPurchase : 0;
 
   return {
     total_spend: totalSpend,
@@ -128,7 +251,7 @@ export const calculateCustomOverview = (campaigns) => {
     average_cpc: averageCPC,
     average_cpm: averageCPM,
     average_ctr: averageCTR,
-    frequency: frequency,
+    cost_per_purchase: costPerPurchase,
   };
 };
 
@@ -144,14 +267,6 @@ export const calculateCampaignTotals = (campaigns) => {
   const averageCPM = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
   const averageCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
   
-  // Calculate frequency (weighted average)
-  const totalFrequencyWeighted = campaigns.reduce((sum, c) => {
-    const impressions = parseInt(c.impressions || 0);
-    const frequency = parseFloat(c.frequency || 0);
-    return sum + (impressions * frequency);
-  }, 0);
-  const averageFrequency = totalImpressions > 0 ? totalFrequencyWeighted / totalImpressions : 0;
-
   // Aggregate actions
   const aggregatedActions = {};
   campaigns.forEach(campaign => {
@@ -172,7 +287,6 @@ export const calculateCampaignTotals = (campaigns) => {
     cpc: averageCPC,
     cpm: averageCPM,
     ctr: averageCTR,
-    frequency: averageFrequency,
     actions: Object.keys(aggregatedActions).map(actionType => ({
       action_type: actionType,
       value: aggregatedActions[actionType].toString()
@@ -205,6 +319,7 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
       "CPM",
       "CTR",
       "Frequency",
+      "Cost per Purchase",
       "Mobile App Install",
       "Purchase",
       "Complete Registration"
@@ -219,6 +334,7 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
       "CPM",
       "CTR",
       "Frequency",
+      "Cost per Purchase",
       "Add to Cart",
       "Purchase",
       "Initiate Checkout",
@@ -234,6 +350,10 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
     }
     
     if (selectedAccount === "mms") {
+      const purchases = getActionValue(item.actions, "purchase");
+      const spend = parseFloat(item.spend || 0);
+      const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
+      
       csvData.push([
         ...baseRowData,
         Math.round(item.spend || 0),
@@ -243,11 +363,16 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
         Math.round(item.cpm || 0),
         parseFloat(item.ctr || 0).toFixed(2),
         Math.round((item.frequency || 0) * 100) / 100,
+        costPerPurchase,
         getActionValue(item.actions, "mobile_app_install"),
         getActionValue(item.actions, "purchase"),
         getActionValue(item.actions, "complete_registration")
       ]);
     } else {
+      const purchases = getActionValue(item.actions, "purchase");
+      const spend = parseFloat(item.spend || 0);
+      const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
+      
       csvData.push([
         ...baseRowData,
         Math.round(item.spend || 0),
@@ -257,6 +382,7 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
         Math.round(item.cpm || 0),
         parseFloat(item.ctr || 0).toFixed(2),
         Math.round((item.frequency || 0) * 100) / 100,
+        costPerPurchase,
         getActionValue(item.actions, "add_to_cart"),
         getActionValue(item.actions, "purchase"),
         getActionValue(item.actions, "initiate_checkout"),
@@ -273,6 +399,10 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
     }
     
     if (selectedAccount === "mms") {
+      const purchases = getActionValue(aggregateData.actions, "purchase");
+      const spend = parseFloat(aggregateData.spend || 0);
+      const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
+      
       csvData.push([
         ...aggregateRowData,
         Math.round(aggregateData.spend),
@@ -282,11 +412,16 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
         Math.round(aggregateData.cpm),
         parseFloat(aggregateData.ctr || 0).toFixed(2),
         Math.round((aggregateData.frequency || 0) * 100) / 100,
+        costPerPurchase,
         getActionValue(aggregateData.actions, "mobile_app_install"),
         getActionValue(aggregateData.actions, "purchase"),
         getActionValue(aggregateData.actions, "complete_registration")
       ]);
     } else {
+      const purchases = getActionValue(aggregateData.actions, "purchase");
+      const spend = parseFloat(aggregateData.spend || 0);
+      const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
+      
       csvData.push([
         ...aggregateRowData,
         Math.round(aggregateData.spend),
@@ -296,6 +431,7 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
         Math.round(aggregateData.cpm),
         parseFloat(aggregateData.ctr || 0).toFixed(2),
         Math.round((aggregateData.frequency || 0) * 100) / 100,
+        costPerPurchase,
         getActionValue(aggregateData.actions, "add_to_cart"),
         getActionValue(aggregateData.actions, "purchase"),
         getActionValue(aggregateData.actions, "initiate_checkout"),

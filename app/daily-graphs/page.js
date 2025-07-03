@@ -169,6 +169,11 @@ export default function DailyGraphs() {
       if (metric === 'purchase') return getActionValue(item.actions, 'purchase');
       if (metric === 'initiate_checkout') return getActionValue(item.actions, 'initiate_checkout');
       if (metric === 'complete_registration') return getActionValue(item.actions, 'complete_registration');
+      if (metric === 'cost_per_purchase') {
+        const purchases = getActionValue(item.actions, 'purchase');
+        const spend = parseFloat(item.spend || 0);
+        return purchases > 0 ? spend / purchases : 0;
+      }
       return parseFloat(item[metric] || 0);
     });
 
@@ -195,6 +200,11 @@ export default function DailyGraphs() {
       if (metric === 'initiate_checkout') return getActionValue(item.actions, 'initiate_checkout');
       if (metric === 'complete_registration') return getActionValue(item.actions, 'complete_registration');
       if (metric === 'mobile_app_install') return getActionValue(item.actions, 'mobile_app_install');
+      if (metric === 'cost_per_purchase') {
+        const purchases = getActionValue(item.actions, 'purchase');
+        const spend = parseFloat(item.spend || 0);
+        return purchases > 0 ? spend / purchases : 0;
+      }
       return parseFloat(item[metric] || 0);
     });
 
@@ -496,6 +506,54 @@ export default function DailyGraphs() {
         {/* Charts Grid */}
         {!loading && selectedLevel === "account" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Daily Purchases Chart - FIRST */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm">🛍</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Daily Purchases</h3>
+              </div>
+              <div className="h-64">
+                <Bar
+                  data={generateChartData('purchase', 'Purchases', '#8B5CF6')}
+                  options={{
+                    ...getChartOptions(),
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...getChartOptions().plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Cost per Purchase Chart - SECOND */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center mb-6">
+                <div className="w-8 h-8 bg-pink-500 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white text-sm">💰</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cost per Purchase</h3>
+              </div>
+              <div className="h-64">
+                <Line
+                  data={generateChartData('cost_per_purchase', 'Cost per Purchase (₹)', '#EC4899')}
+                  options={{
+                    ...getChartOptions(),
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      ...getChartOptions().plugins,
+                      legend: { display: false }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
             {/* Spend Chart */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center mb-6">
@@ -579,30 +637,6 @@ export default function DailyGraphs() {
               <div className="h-64">
                 <Line
                   data={generateChartData('ctr', 'CTR (%)', '#EF4444')}
-                  options={{
-                    ...getChartOptions(),
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      ...getChartOptions().plugins,
-                      legend: { display: false }
-                    }
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Conversions Chart */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center mb-6">
-                <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-white text-sm">🛍</span>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Daily Purchases</h3>
-              </div>
-              <div className="h-64">
-                <Bar
-                  data={generateChartData('purchase', 'Purchases', '#8B5CF6')}
                   options={{
                     ...getChartOptions(),
                     responsive: true,
@@ -701,6 +735,62 @@ export default function DailyGraphs() {
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Conversions Chart - FIRST */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <div className="flex items-center mb-4">
+                      <div className="w-6 h-6 bg-purple-500 rounded-md flex items-center justify-center mr-2">
+                        <span className="text-white text-xs">🛍</span>
+                      </div>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {selectedAccount === "mms" ? "App Installs" : "Purchases"}
+                      </h4>
+                    </div>
+                    <div className="h-48">
+                      <Line
+                        data={generateCampaignChartData(
+                          selectedAccount === "mms" ? 'mobile_app_install' : 'purchase', 
+                          campaign.data, 
+                          '#8B5CF6'
+                        )}
+                        options={{
+                          ...getChartOptions(),
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            ...getChartOptions().plugins,
+                            legend: { display: false },
+                            title: { display: false }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cost per Purchase Chart - SECOND */}
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <div className="flex items-center mb-4">
+                      <div className="w-6 h-6 bg-pink-500 rounded-md flex items-center justify-center mr-2">
+                        <span className="text-white text-xs">💰</span>
+                      </div>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Cost per Purchase</h4>
+                    </div>
+                    <div className="h-48">
+                      <Line
+                        data={generateCampaignChartData('cost_per_purchase', campaign.data, '#EC4899')}
+                        options={{
+                          ...getChartOptions(),
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            ...getChartOptions().plugins,
+                            legend: { display: false },
+                            title: { display: false }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
                   {/* Spend Chart */}
                   <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
                     <div className="flex items-center mb-4">
@@ -762,37 +852,6 @@ export default function DailyGraphs() {
                     <div className="h-48">
                       <Line
                         data={generateCampaignChartData('clicks', campaign.data, '#F59E0B')}
-                        options={{
-                          ...getChartOptions(),
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            ...getChartOptions().plugins,
-                            legend: { display: false },
-                            title: { display: false }
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Conversions Chart */}
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
-                    <div className="flex items-center mb-4">
-                      <div className="w-6 h-6 bg-purple-500 rounded-md flex items-center justify-center mr-2">
-                        <span className="text-white text-xs">🛍</span>
-                      </div>
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {selectedAccount === "mms" ? "App Installs" : "Purchases"}
-                      </h4>
-                    </div>
-                    <div className="h-48">
-                      <Line
-                        data={generateCampaignChartData(
-                          selectedAccount === "mms" ? 'mobile_app_install' : 'purchase', 
-                          campaign.data, 
-                          '#8B5CF6'
-                        )}
                         options={{
                           ...getChartOptions(),
                           responsive: true,

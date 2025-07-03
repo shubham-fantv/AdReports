@@ -26,6 +26,23 @@ export default function Home() {
   const [campaignTotals, setCampaignTotals] = useState(null);
   const [aggregateData, setAggregateData] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // Filter state for MMS overview cards
+  const [selectedFilters, setSelectedFilters] = useState({
+    india_android: false,
+    india_ios: false,
+    us_android: false,
+    us_ios: false,
+    india_overall: true,
+    us_overall: false,
+    android_overall: false,
+    ios_overall: false,
+    complete_overall: false
+  });
+
+  // Inline filter state
+  const [selectedCountry, setSelectedCountry] = useState("india");
+  const [selectedPlatforms, setSelectedPlatforms] = useState(["all"]);
 
   // Check for existing authentication on page load
   useEffect(() => {
@@ -58,6 +75,82 @@ export default function Home() {
     setOverview(null);
     setAggregateData(null);
     setCampaignTotals(null);
+  };
+
+  // Handle platform checkbox changes
+  const handlePlatformChange = (platform) => {
+    setSelectedPlatforms(prev => {
+      if (platform === "all") {
+        return ["all"];
+      } else {
+        const newPlatforms = prev.filter(p => p !== "all");
+        if (newPlatforms.includes(platform)) {
+          const filtered = newPlatforms.filter(p => p !== platform);
+          return filtered.length === 0 ? ["all"] : filtered;
+        } else {
+          return [...newPlatforms, platform];
+        }
+      }
+    });
+  };
+
+  // Handle apply filters button
+  const handleApplyFilters = () => {
+    const newFilters = {
+      india_android: false,
+      india_ios: false,
+      us_android: false,
+      us_ios: false,
+      india_overall: false,
+      us_overall: false,
+      android_overall: false,
+      ios_overall: false,
+      complete_overall: false
+    };
+
+    const hasAllPlatforms = selectedPlatforms.includes("all");
+    const hasAndroid = selectedPlatforms.includes("android");
+    const hasIOS = selectedPlatforms.includes("ios");
+
+    if (selectedCountry === "all" && hasAllPlatforms) {
+      // Show 3 sections: complete overall + android overall + ios overall
+      newFilters.complete_overall = true;
+      newFilters.android_overall = true;
+      newFilters.ios_overall = true;
+    } else if (selectedCountry === "all") {
+      // Show all countries for selected platforms
+      if (hasAndroid) {
+        newFilters.india_android = true;
+        newFilters.us_android = true;
+      }
+      if (hasIOS) {
+        newFilters.india_ios = true;
+        newFilters.us_ios = true;
+      }
+    } else if (hasAllPlatforms) {
+      // Show all platforms for selected country
+      if (selectedCountry === "india") {
+        newFilters.india_overall = true;
+      } else if (selectedCountry === "us") {
+        newFilters.us_overall = true;
+      }
+    } else {
+      // Show specific country + platform combinations
+      if (hasAndroid) {
+        const filterKey = `${selectedCountry}_android`;
+        if (newFilters.hasOwnProperty(filterKey)) {
+          newFilters[filterKey] = true;
+        }
+      }
+      if (hasIOS) {
+        const filterKey = `${selectedCountry}_ios`;
+        if (newFilters.hasOwnProperty(filterKey)) {
+          newFilters[filterKey] = true;
+        }
+      }
+    }
+
+    setSelectedFilters(newFilters);
   };
 
   const clearData = () => {
@@ -171,7 +264,7 @@ export default function Home() {
       setCampaignTotals(campaignTotalsResult);
       
       if (allCampaigns.length > 0) {
-        const overviewFromDailyData = calculateCountryBasedOverview(allCampaigns, selectedAccount, selectedLevel);
+        const overviewFromDailyData = calculateCountryBasedOverview(allCampaigns, selectedAccount, selectedLevel, selectedFilters);
         setOverview(overviewFromDailyData);
       }
       
@@ -205,6 +298,15 @@ export default function Home() {
   const handleExportCSV = () => {
     exportToCSV(tableData, aggregateData, selectedAccount, selectedLevel, dailyStartDate, dailyEndDate);
   };
+
+  // Refresh overview when filters change for MMS campaign level
+  useEffect(() => {
+    if (selectedAccount === "mms" && selectedLevel === "campaign" && tableData.length > 0) {
+      console.log("Filters changed, recalculating overview...");
+      const overviewFromDailyData = calculateCountryBasedOverview(tableData, selectedAccount, selectedLevel, selectedFilters);
+      setOverview(overviewFromDailyData);
+    }
+  }, [selectedFilters, selectedAccount, selectedLevel, tableData]);
 
   // Show login form if not authenticated
   if (!isAuthenticated) {
@@ -284,6 +386,71 @@ export default function Home() {
           loading={loading}
           onExportCSV={handleExportCSV}
         />
+
+        {/* MMS Campaign Level Filters */}
+        {selectedAccount === "mms" && selectedLevel === "campaign" && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 mt-8">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span>🔍</span>
+              Overview Card Filters
+            </h3>
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              {/* Country Filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Country:
+                </label>
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">All Countries</option>
+                  <option value="india">🇮🇳 India</option>
+                  <option value="us">🇺🇸 US</option>
+                </select>
+              </div>
+
+              {/* Platform Filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Platform:
+                </label>
+                <div className="flex items-center gap-3 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                  {[
+                    { value: "all", label: "All", icon: "🌍" },
+                    { value: "android", label: "Android", icon: "🤖" },
+                    { value: "ios", label: "iOS", icon: "🍎" }
+                  ].map(platform => (
+                    <label key={platform.value} className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedPlatforms.includes(platform.value)}
+                        onChange={() => handlePlatformChange(platform.value)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                        {platform.icon} {platform.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Apply Button */}
+              <button
+                onClick={handleApplyFilters}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2"
+              >
+                <span>✓</span>
+                Apply Filters
+              </button>
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Select country and platform filters, then click Apply to update the overview cards below.
+            </div>
+          </div>
+        )}
 
         {/* Overview Cards */}
         <OverviewCards overview={overview} />

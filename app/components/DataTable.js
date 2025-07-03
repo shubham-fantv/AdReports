@@ -57,11 +57,13 @@ export default function DataTable({
               <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">CPM</th>
               <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">CTR</th>
               <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Frequency</th>
+              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Cost per Purchase</th>
               {selectedAccount === "mms" ? (
                 <>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">App Install</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Purchase</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Registration</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Cost per Purchase</th>
                 </>
               ) : (
                 <>
@@ -69,6 +71,7 @@ export default function DataTable({
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Purchase</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Checkout</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Registration</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Cost per Purchase</th>
                 </>
               )}
             </tr>
@@ -104,7 +107,14 @@ export default function DataTable({
                   {parseFloat(item.ctr || 0).toFixed(2)}%
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
-                  {(Math.round(item.frequency * 100) / 100).toFixed(2)}
+                  {(Math.round((item.frequency || 0) * 100) / 100).toFixed(2)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                  {(() => {
+                    const purchases = getActionValue(item.actions, "purchase");
+                    const spend = parseFloat(item.spend || 0);
+                    return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
+                  })()}
                 </td>
                 {selectedAccount === "mms" ? (
                   <>
@@ -116,6 +126,13 @@ export default function DataTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
                       {getActionValue(item.actions, "complete_registration").toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                      {(() => {
+                        const purchases = getActionValue(item.actions, "purchase");
+                        const spend = parseFloat(item.spend || 0);
+                        return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
+                      })()}
                     </td>
                   </>
                 ) : (
@@ -131,6 +148,13 @@ export default function DataTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
                       {getActionValue(item.actions, "complete_registration").toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
+                      {(() => {
+                        const purchases = getActionValue(item.actions, "purchase");
+                        const spend = parseFloat(item.spend || 0);
+                        return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
+                      })()}
                     </td>
                   </>
                 )}
@@ -169,6 +193,13 @@ export default function DataTable({
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
                       {(Math.round((campaign.frequency || 0) * 100) / 100).toFixed(2)}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                      {(() => {
+                        const purchases = getActionValue(campaign.actions, "purchase");
+                        const spend = parseFloat(campaign.spend || 0);
+                        return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
+                      })()}
+                    </td>
                     {selectedAccount === "mms" ? (
                       <>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
@@ -179,6 +210,13 @@ export default function DataTable({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
                           {getActionValue(campaign.actions, "complete_registration").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                          {(() => {
+                            const purchases = getActionValue(campaign.actions, "purchase");
+                            const spend = parseFloat(campaign.spend || 0);
+                            return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
+                          })()}
                         </td>
                       </>
                     ) : (
@@ -194,6 +232,13 @@ export default function DataTable({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
                           {getActionValue(campaign.actions, "complete_registration").toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
+                          {(() => {
+                            const purchases = getActionValue(campaign.actions, "purchase");
+                            const spend = parseFloat(campaign.spend || 0);
+                            return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
+                          })()}
                         </td>
                       </>
                     )}
@@ -232,7 +277,14 @@ export default function DataTable({
                   {parseFloat(aggregateData.ctr || 0).toFixed(2)}%
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
-                  {(Math.round(aggregateData.frequency * 100) / 100).toFixed(2)}
+                  {(Math.round((aggregateData.frequency || 0) * 100) / 100).toFixed(2)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
+                  {(() => {
+                    const purchases = getActionValue(aggregateData.actions, "purchase");
+                    const spend = parseFloat(aggregateData.spend || 0);
+                    return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
+                  })()}
                 </td>
                 {selectedAccount === "mms" ? (
                   <>
@@ -244,6 +296,13 @@ export default function DataTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
                       {getActionValue(aggregateData.actions, "complete_registration").toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
+                      {(() => {
+                        const purchases = getActionValue(aggregateData.actions, "purchase");
+                        const spend = parseFloat(aggregateData.spend || 0);
+                        return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
+                      })()}
                     </td>
                   </>
                 ) : (
@@ -259,6 +318,13 @@ export default function DataTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
                       {getActionValue(aggregateData.actions, "complete_registration").toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
+                      {(() => {
+                        const purchases = getActionValue(aggregateData.actions, "purchase");
+                        const spend = parseFloat(aggregateData.spend || 0);
+                        return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
+                      })()}
                     </td>
                   </>
                 )}
