@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getTodayIST } from "./utils/dateHelpers";
+import { getTodayIST, getISTDate, formatDateString } from "./utils/dateHelpers";
+import { subDays } from 'date-fns';
 import { calculateCustomOverview, calculateCountryBasedOverview, exportToCSV } from "./utils/businessLogic";
 import { apiService } from "./services/apiService";
 import ThemeToggle from './components/ThemeToggle';
@@ -16,9 +17,9 @@ export default function Home() {
   // Data state
   const [selectedAccount, setSelectedAccount] = useState("default");
   const [selectedLevel, setSelectedLevel] = useState("account");
-  const [dailyStartDate, setDailyStartDate] = useState(() => getTodayIST());
-  const [dailyEndDate, setDailyEndDate] = useState(() => getTodayIST());
-  const [activeDailyRange, setActiveDailyRange] = useState("today");
+  const [dailyStartDate, setDailyStartDate] = useState("");
+  const [dailyEndDate, setDailyEndDate] = useState("");
+  const [activeDailyRange, setActiveDailyRange] = useState("L7");
   
   // Results state
   const [overview, setOverview] = useState(null);
@@ -55,11 +56,16 @@ export default function Home() {
   // Load initial data when authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const todayStr = getTodayIST();
-      setDailyStartDate(todayStr);
-      setDailyEndDate(todayStr);
-      setActiveDailyRange("today");
-      fetchDailyData(todayStr, todayStr);
+      // Set L7 (last 7 days) as default
+      const today = getISTDate();
+      const startDate = subDays(today, 7);
+      const startDateStr = formatDateString(startDate);
+      const endDateStr = formatDateString(today);
+      
+      setDailyStartDate(startDateStr);
+      setDailyEndDate(endDateStr);
+      setActiveDailyRange("L7");
+      fetchDailyData(startDateStr, endDateStr);
     }
   }, [isAuthenticated]);
 
@@ -266,6 +272,9 @@ export default function Home() {
       if (allCampaigns.length > 0) {
         const overviewFromDailyData = calculateCountryBasedOverview(allCampaigns, selectedAccount, selectedLevel, selectedFilters);
         setOverview(overviewFromDailyData);
+      } else {
+        // Clear overview when no campaigns data (zero spend)
+        setOverview(null);
       }
       
       const aggregateItem = aggregateResult?.data?.campaigns?.[0];
@@ -278,6 +287,7 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching daily data:", error);
       setTableData([]);
+      setOverview(null);
       setAggregateData(null);
       setCampaignTotals(null);
     }

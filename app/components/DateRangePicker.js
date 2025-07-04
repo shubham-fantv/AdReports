@@ -18,26 +18,28 @@ export default function DateRangePicker({
   onClearData
 }) {
   
-  const setDateRange = async (days, rangeKey) => {
+  const handleQuickDateRange = (days, rangeKey) => {
     const today = getISTDate();
-    const startDate = subDays(today, days - 1);
+    let startDate, endDate;
+    
+    if (days === 0) {
+      // L0 means today only
+      startDate = today;
+      endDate = today;
+    } else {
+      // Calculate start date by subtracting days
+      startDate = subDays(today, days);
+      endDate = today;
+    }
     
     const startDateStr = formatDateString(startDate);
-    const endDateStr = formatDateString(today);
+    const endDateStr = formatDateString(endDate);
     
     setDailyStartDate(startDateStr);
     setDailyEndDate(endDateStr);
     setActiveDailyRange(rangeKey);
     
     onDateRangeChange(startDateStr, endDateStr);
-  };
-
-  const handleTodayClick = () => {
-    const todayStr = getTodayIST();
-    setDailyStartDate(todayStr);
-    setDailyEndDate(todayStr);
-    setActiveDailyRange("today");
-    onDateRangeChange(todayStr, todayStr);
   };
 
   const handleApplyClick = () => {
@@ -101,36 +103,25 @@ export default function DateRangePicker({
           Quick Ranges
         </label>
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={handleTodayClick}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-              activeDailyRange === "today" 
-                ? "bg-blue-700 text-white shadow-lg" 
-                : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setDateRange(7, "last7")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-              activeDailyRange === "last7" 
-                ? "bg-blue-700 text-white shadow-lg" 
-                : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            Last 7 Days
-          </button>
-          <button
-            onClick={() => setDateRange(10, "last10")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-              activeDailyRange === "last10" 
-                ? "bg-blue-700 text-white shadow-lg" 
-                : "bg-blue-100 dark:bg-gray-700 text-blue-800 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            Last 10 Days
-          </button>
+          {[
+            { label: "L0", days: 0, key: "L0" },
+            { label: "L1", days: 1, key: "L1" },
+            { label: "L7", days: 7, key: "L7" },
+            { label: "L10", days: 10, key: "L10" },
+            { label: "L30", days: 30, key: "L30" },
+          ].map(range => (
+            <button
+              key={range.key}
+              onClick={() => handleQuickDateRange(range.days, range.key)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeDailyRange === range.key
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+              }`}
+            >
+              {range.label}
+            </button>
+          ))}
         </div>
       </div>
 

@@ -169,12 +169,54 @@ export default function OverviewCards({ overview }) {
     return null;
   }
 
-  console.log("OverviewCards received data:", overview);
-  console.log("Has India data:", !!overview.india);
-  console.log("Has US data:", !!overview.us);
-  console.log("Has Android data:", !!overview.android);
-  console.log("Has iOS data:", !!overview.ios);
-  console.log("Has combined data:", !!overview.india_android || !!overview.india_ios || !!overview.us_android || !!overview.us_ios);
+  // Calculate total spend across all sections for the current date range
+  const calculateTotalSpend = (overviewData) => {
+    let totalSpend = 0;
+    
+    // If overview data is null or undefined, return 0
+    if (!overviewData || typeof overviewData !== 'object') {
+      return 0;
+    }
+    
+    // Check if this is a direct data object (has total_spend directly)
+    if (overviewData.hasOwnProperty('total_spend')) {
+      const directSpend = Number(overviewData.total_spend) || 0;
+      totalSpend += directSpend;
+    }
+    
+    // Check all possible nested data sections and sum their total_spend
+    const sections = [
+      overviewData.india_android,
+      overviewData.india_ios,
+      overviewData.us_android,
+      overviewData.us_ios,
+      overviewData.india_overall,
+      overviewData.us_overall,
+      overviewData.android_overall,
+      overviewData.ios_overall,
+      overviewData.complete_overall,
+      overviewData.india,
+      overviewData.us,
+      overviewData.android,
+      overviewData.ios,
+      overviewData.default
+    ];
+    
+    sections.forEach(section => {
+      if (section && typeof section === 'object' && section.total_spend) {
+        totalSpend += Number(section.total_spend) || 0;
+      }
+    });
+    
+    return totalSpend;
+  };
+
+  const totalSpend = calculateTotalSpend(overview);
+  
+  // Hide all overview cards if total spend for this date range is zero
+  if (totalSpend === 0) {
+    return null;
+  }
 
   // Check for MMS filtered data (combined, platform, or country overall)
   const hasMmsFilteredData = overview.india_android || overview.india_ios || 

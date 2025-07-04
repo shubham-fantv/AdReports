@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Line, Bar } from "react-chartjs-2";
+import { format, subDays } from 'date-fns';
 import ThemeToggle from '../../components/ThemeToggle';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
@@ -30,7 +31,8 @@ import {
   SpendVsPurchaseLineChart, 
   SideBySideCharts,
   IndividualMetricsGrid,
-  DeviceBreakdownTable
+  DeviceBreakdownTable,
+  PlacementBreakdownChart
 } from './ChartComponents';
 import { 
   generateLineChartData, 
@@ -83,18 +85,27 @@ export default function DailyGraphsPage() {
   const [genderData, setGenderData] = useState([]);
   const [deviceData, setDeviceData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeRange, setActiveRange] = useState("last7");
+  const [activeRange, setActiveRange] = useState("L7");
   const [analysis, setAnalysis] = useState("");
   const [analyzingData, setAnalyzingData] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState("default");
   const [selectedLevel, setSelectedLevel] = useState("account");
   const [selectedCountry, setSelectedCountry] = useState("all");
+  const [selectedGraphLevel, setSelectedGraphLevel] = useState("normal");
 
-  // Initialize default date range
+  // Initialize default date range to L7 (last 7 days)
   useEffect(() => {
-    const defaultRange = getDefaultDateRange();
-    setDailyStartDate(defaultRange.startDate);
-    setDailyEndDate(defaultRange.endDate);
+    // Set L7 (last 7 days) as default using IST
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+    const istNow = new Date(now.getTime() + istOffset);
+    
+    const endDate = format(istNow, 'yyyy-MM-dd');
+    const startDate = format(subDays(istNow, 7), 'yyyy-MM-dd');
+    
+    setDailyStartDate(startDate);
+    setDailyEndDate(endDate);
+    setActiveRange("L7");
   }, []);
 
   // Check authentication
@@ -107,12 +118,12 @@ export default function DailyGraphsPage() {
     }
   }, []);
 
-  // Fetch data when account/level/country changes
+  // Fetch data when dates are set or when account/level/country/graphLevel changes
   useEffect(() => {
     if (dailyStartDate && dailyEndDate && isAuthenticated) {
       handleFetchDailyData();
     }
-  }, [selectedAccount, selectedLevel, selectedCountry, isAuthenticated]);
+  }, [dailyStartDate, dailyEndDate, selectedAccount, selectedLevel, selectedCountry, selectedGraphLevel, isAuthenticated]);
 
   // Console log MMS purchase data when chartData updates
   useEffect(() => {
@@ -167,6 +178,7 @@ export default function DailyGraphsPage() {
       selectedAccount,
       selectedLevel,
       selectedCountry,
+      selectedGraphLevel,
       setChartData,
       setAgeData,
       setGenderData,
@@ -177,6 +189,49 @@ export default function DailyGraphsPage() {
 
   const handleSetDateRange = (days, rangeKey) => {
     setDateRange(days, rangeKey, setDailyStartDate, setDailyEndDate, setActiveRange);
+  };
+
+  const handleQuickDateRange = (days, rangeKey) => {
+    // Get current date in IST
+    const now = new Date();
+    // Convert to IST by adding 5.5 hours (IST is UTC+5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+    const istNow = new Date(now.getTime() + istOffset);
+    
+    let endDate, startDate;
+    
+    if (days === 0) {
+      // L0 means today only
+      endDate = format(istNow, 'yyyy-MM-dd');
+      startDate = format(istNow, 'yyyy-MM-dd');
+    } else {
+      // Calculate start date by subtracting days
+      endDate = format(istNow, 'yyyy-MM-dd');
+      startDate = format(subDays(istNow, days), 'yyyy-MM-dd');
+    }
+    
+    // Set the dates and active range
+    setDailyStartDate(startDate);
+    setDailyEndDate(endDate);
+    setActiveRange(rangeKey);
+    
+    // Clear existing data
+    setChartData([]);
+    
+    // Fetch data immediately with the new date range
+    fetchDailyData(
+      startDate,
+      endDate,
+      selectedAccount,
+      selectedLevel,
+      selectedCountry,
+      selectedGraphLevel,
+      setChartData,
+      setAgeData,
+      setGenderData,
+      setDeviceData,
+      setLoading
+    );
   };
 
   // Create wrapped functions that include necessary dependencies
@@ -401,8 +456,8 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
               </select>
             </div>
 
-            {/* Country Selection - Only show for MMS */}
-            {selectedAccount === "mms" && (
+            {/* Country Selection - Only show for MMS account level */}
+            {selectedAccount === "mms" && selectedLevel !== "campaign" && (
               <div className="flex-shrink-0">
                 <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
                   Country
@@ -422,16 +477,40 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
               </div>
             )}
 
+            {/* Graph Level Selection - Only show for MMS campaign level */}
+            {selectedAccount === "mms" && selectedLevel === "campaign" && (
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                  Graph Level
+                </label>
+                <select
+                  value={selectedGraphLevel}
+                  onChange={(e) => {
+                    setSelectedGraphLevel(e.target.value);
+                    setChartData([]);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="us_aggregate">US Aggregate</option>
+                  <option value="india_aggregate">India Aggregate</option>
+                </select>
+              </div>
+            )}
+
 
             {/* Date Range Quick Buttons */}
             <div className="flex flex-wrap gap-2">
               {[
-                { label: "Last 7 days", days: 7, key: "last7" },
-                { label: "Last 14 days", days: 14, key: "last14" },
+                { label: "L0", days: 0, key: "L0" },
+                { label: "L1", days: 1, key: "L1" },
+                { label: "L7", days: 7, key: "L7" },
+                { label: "L10", days: 10, key: "L10" },
+                { label: "L30", days: 30, key: "L30" },
               ].map(range => (
                 <button
                   key={range.key}
-                  onClick={() => handleSetDateRange(range.days, range.key)}
+                  onClick={() => handleQuickDateRange(range.days, range.key)}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeRange === range.key
                       ? "bg-blue-600 text-white shadow-md"
@@ -641,10 +720,12 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
         {/* MMS Cards - Show for MMS account at both account and campaign level */}
         {selectedAccount === "mms" && chartData.length > 0 && (
           <MmsPerformanceCards 
-            key={`mms-cards-${selectedCountry}-${chartData.length}`}
+            key={`mms-cards-${selectedLevel === "campaign" ? selectedGraphLevel : selectedCountry}-${chartData.length}`}
             chartData={chartData} 
             calculateMmsMetrics={wrappedCalculateMmsMetrics}
             selectedCountry={selectedCountry}
+            selectedGraphLevel={selectedGraphLevel}
+            selectedLevel={selectedLevel}
           />
         )}
 
@@ -710,8 +791,8 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
           />
         )}
 
-        {/* Audience Breakdown - Only show for MMS account and account level */}
-        {selectedAccount === "mms" && selectedLevel === "account" && (ageData.length > 0 || genderData.length > 0) && (
+        {/* Audience Breakdown - Only show for MMS account and account level, skip if country filter is applied */}
+        {selectedAccount === "mms" && selectedLevel === "account" && selectedCountry === "all" && (ageData.length > 0 || genderData.length > 0) && (
           <div className="mb-8">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="mb-6">
@@ -765,8 +846,8 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
           </div>
         )}
 
-        {/* VideoNation Cards - Show for VideoNation account at both account and campaign level */}
-        {selectedAccount === "default" && chartData.length > 0 && (
+        {/* VideoNation Cards - Show for VideoNation campaign level only (account level cards are already shown at top) */}
+        {selectedAccount === "default" && selectedLevel === "campaign" && chartData.length > 0 && (
           <VideoNationPerformanceCards 
             chartData={chartData} 
             calculateSummaryMetrics={wrappedCalculateSummaryMetrics}
@@ -778,14 +859,39 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
         {selectedLevel === "campaign" && chartData.length > 0 && (
           <div className="space-y-6">
 
-            {/* Individual Campaign Charts */}
-            {getUniqueCampaigns(chartData, selectedLevel)
-              .filter(campaign => {
-                // Filter out campaigns with zero spend across entire date range
-                const totalSpend = campaign.data.reduce((sum, item) => sum + (parseFloat(item.spend) || 0), 0);
-                return totalSpend > 0;
-              })
-              .map(campaign => {
+            {/* Show Individual Metrics Grid for Aggregates, Individual Campaign Charts for Normal */}
+            {(selectedAccount === "mms" && (selectedGraphLevel === "us_aggregate" || selectedGraphLevel === "india_aggregate")) ? (
+              // Show account-level style charts for aggregates
+              <IndividualMetricsGrid 
+                chartData={chartData} 
+                generateIndividualMetricChart={generateIndividualMetricChart}
+                getActionValue={getActionValue}
+                getChartOptions={getChartOptions}
+                theme={theme}
+                accountType={selectedAccount}
+              />
+            ) : (
+              // Show individual campaign charts for normal level
+              <>
+                {getUniqueCampaigns(chartData, selectedLevel)
+                  .filter(campaign => {
+                    // Filter out campaigns with zero spend across entire date range
+                    const totalSpend = campaign.data.reduce((sum, item) => sum + (parseFloat(item.spend) || 0), 0);
+                    if (totalSpend === 0) return false;
+                    
+                    // Filter out campaigns where all individual dates have spend < ₹10
+                    const hasValidSpendDates = campaign.data.some(item => (parseFloat(item.spend) || 0) >= 10);
+                    return hasValidSpendDates;
+                  })
+                  .map(campaign => {
+                    // Filter the campaign data to only include dates with spend >= ₹10
+                    const filteredData = campaign.data.filter(item => (parseFloat(item.spend) || 0) >= 10);
+                    return {
+                      ...campaign,
+                      data: filteredData
+                    };
+                  })
+                  .map(campaign => {
               // Define metrics for campaign level based on account type
               const getCampaignMetrics = () => {
                 const baseMetrics = [
@@ -886,15 +992,31 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             {getUniqueCampaigns(chartData, selectedLevel)
               .filter(campaign => {
                 const totalSpend = campaign.data.reduce((sum, item) => sum + (parseFloat(item.spend) || 0), 0);
-                return totalSpend > 0;
+                if (totalSpend === 0) return false;
+                
+                // Filter out campaigns where all individual dates have spend < ₹10
+                const hasValidSpendDates = campaign.data.some(item => (parseFloat(item.spend) || 0) >= 10);
+                return hasValidSpendDates;
               }).length === 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
                 <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">📊</span>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Active Campaigns</h3>
-                <p className="text-gray-600 dark:text-gray-400">No campaigns with spend found for the selected date range</p>
+                <p className="text-gray-600 dark:text-gray-400">No campaigns with spend ≥ ₹10 found for the selected date range</p>
               </div>
+            )}
+              </>
+            )}
+            
+            {/* Placement Breakdown Chart - Show for MMS campaign level (all countries) and VideoNation campaign level */}
+            {((selectedAccount === "mms" && selectedLevel === "campaign" && selectedCountry === "all") || 
+              (selectedAccount === "default" && selectedLevel === "campaign")) && 
+              deviceData.length > 0 && (
+              <PlacementBreakdownChart 
+                placementData={deviceData} 
+                theme={theme}
+              />
             )}
           </div>
         )}

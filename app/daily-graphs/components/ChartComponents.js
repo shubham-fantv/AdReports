@@ -769,3 +769,294 @@ export const DeviceBreakdownTable = ({ deviceData, getActionValue, theme }) => {
     </div>
   );
 };
+
+export const PlacementBreakdownChart = ({ placementData, theme }) => {
+  if (!placementData || !placementData.length) return null;
+
+  console.log('📊 PlacementBreakdownChart - Raw data:', placementData);
+
+  // Get action value function
+  const getActionValue = (actions, actionType) => {
+    if (!actions || !Array.isArray(actions)) return 0;
+    const action = actions.find(a => a.action_type === actionType);
+    return action ? parseInt(action.value || 0) : 0;
+  };
+
+  // Process placement data - combine publisher_platform and platform_position
+  const placementMap = {};
+  
+  placementData.forEach(item => {
+    const placement = `${item.publisher_platform || 'Unknown'} - ${item.platform_position || 'Unknown'}`;
+    const spend = parseFloat(item.spend || 0);
+    const purchases = getActionValue(item.actions, 'purchase');
+    
+    if (!placementMap[placement]) {
+      placementMap[placement] = {
+        placement,
+        spend: 0,
+        purchases: 0,
+        impressions: 0,
+        clicks: 0
+      };
+    }
+    
+    placementMap[placement].spend += spend;
+    placementMap[placement].purchases += purchases;
+    placementMap[placement].impressions += parseFloat(item.impressions || 0);
+    placementMap[placement].clicks += parseFloat(item.clicks || 0);
+  });
+
+  const aggregatedData = Object.values(placementMap);
+  
+  // Calculate totals for percentage calculations
+  const totalSpend = aggregatedData.reduce((sum, item) => sum + item.spend, 0);
+  const totalPurchases = aggregatedData.reduce((sum, item) => sum + item.purchases, 0);
+  
+  // Calculate CPA and percentages for each placement
+  aggregatedData.forEach(item => {
+    item.cpa = item.purchases > 0 ? item.spend / item.purchases : 0;
+    item.spendPercent = totalSpend > 0 ? (item.spend / totalSpend) * 100 : 0;
+    item.purchasePercent = totalPurchases > 0 ? (item.purchases / totalPurchases) * 100 : 0;
+  });
+
+  // Sort by total spend to show most significant placements first
+  aggregatedData.sort((a, b) => b.spend - a.spend);
+
+  console.log('📊 PlacementBreakdownChart - Processed data:', aggregatedData);
+
+  if (aggregatedData.length === 0) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Ad Placement Breakdown
+        </h3>
+        <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+          No placement data available
+        </div>
+      </div>
+    );
+  }
+
+  // Prepare data for dual-axis chart (bars for purchases, line for CPA)
+  const labels = aggregatedData.map(item => item.placement);
+  const purchasesData = aggregatedData.map(item => item.purchases);
+  const cpaData = aggregatedData.map(item => item.cpa);
+
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: 'Number of Purchases',
+        data: purchasesData,
+        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 2,
+        type: 'bar',
+        yAxisID: 'y',
+        maxBarThickness: 60,
+      },
+      {
+        label: 'Cost per Purchase (CPA)',
+        data: cpaData,
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderColor: 'rgba(239, 68, 68, 1)',
+        borderWidth: 3,
+        type: 'line',
+        yAxisID: 'y1',
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+        pointBorderColor: 'rgba(239, 68, 68, 1)',
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        fill: false,
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        display: true,
+        labels: {
+          usePointStyle: true,
+          pointStyle: 'circle',
+          padding: 20,
+          font: {
+            size: 12,
+            weight: 'bold',
+          },
+          color: theme === 'dark' ? '#F3F4F6' : '#1F2937',
+        },
+      },
+      tooltip: {
+        backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        titleColor: theme === 'dark' ? '#ffffff' : '#000000',
+        bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
+        borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context) {
+            const datasetLabel = context.dataset.label || '';
+            const value = context.parsed.y;
+            
+            if (datasetLabel === 'Number of Purchases') {
+              return `${datasetLabel}: ${value.toLocaleString()}`;
+            } else if (datasetLabel === 'Cost per Purchase (CPA)') {
+              return `${datasetLabel}: ₹${Math.round(value).toLocaleString()}`;
+            }
+            return `${datasetLabel}: ${value}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: theme === 'dark' ? '#9CA3AF' : '#4B5563',
+          font: {
+            size: 11,
+            weight: 'bold',
+          },
+          maxRotation: 45,
+          minRotation: 45,
+        },
+        title: {
+          display: true,
+          text: 'Ad Placement',
+          font: {
+            size: 14,
+            weight: 'bold',
+          },
+          color: theme === 'dark' ? '#F3F4F6' : '#1F2937',
+        }
+      },
+      y: {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        grid: {
+          color: theme === 'dark' ? '#374151' : '#E5E7EB',
+          borderDash: [5, 5],
+        },
+        ticks: {
+          color: theme === 'dark' ? '#9CA3AF' : '#4B5563',
+          font: {
+            size: 11,
+            weight: 'bold',
+          },
+          callback: function(value) {
+            return value.toLocaleString();
+          }
+        },
+        title: {
+          display: true,
+          text: 'Number of Purchases',
+          font: {
+            size: 14,
+            weight: 'bold',
+          },
+          color: 'rgba(59, 130, 246, 1)',
+        }
+      },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        grid: {
+          drawOnChartArea: false,
+        },
+        ticks: {
+          color: theme === 'dark' ? '#9CA3AF' : '#4B5563',
+          font: {
+            size: 11,
+            weight: 'bold',
+          },
+          callback: function(value) {
+            return '₹' + Math.round(value).toLocaleString();
+          }
+        },
+        title: {
+          display: true,
+          text: 'Cost per Purchase (CPA)',
+          font: {
+            size: 14,
+            weight: 'bold',
+          },
+          color: 'rgba(239, 68, 68, 1)',
+        }
+      },
+    },
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Ad Placement Breakdown</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Purchase volume and cost efficiency across different ad placements
+          </p>
+        </div>
+        <div className="text-xs text-gray-600 dark:text-gray-400">
+          {aggregatedData.length} placements
+        </div>
+      </div>
+      
+      <div className="h-96">
+        <Bar data={chartData} options={chartOptions} />
+      </div>
+      
+      {/* Summary table */}
+      <div className="mt-6 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="py-3 px-4 text-left font-semibold text-gray-900 dark:text-white">Placement</th>
+              <th className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">Spend</th>
+              <th className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">% of Spend</th>
+              <th className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">Purchases</th>
+              <th className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">% of Purchases</th>
+              <th className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white">CPA</th>
+            </tr>
+          </thead>
+          <tbody>
+            {aggregatedData.map((item, index) => (
+              <tr 
+                key={index}
+                className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
+              >
+                <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
+                  {item.placement}
+                </td>
+                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                  ₹{Math.round(item.spend).toLocaleString()}
+                </td>
+                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                  {item.spendPercent.toFixed(1)}%
+                </td>
+                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                  {item.purchases.toLocaleString()}
+                </td>
+                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                  {item.purchasePercent.toFixed(1)}%
+                </td>
+                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                  ₹{Math.round(item.cpa).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};

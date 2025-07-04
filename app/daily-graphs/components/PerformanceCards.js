@@ -2,7 +2,7 @@
 
 // Performance cards components
 
-export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCountry = "all" }) => {
+export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCountry = "all", selectedGraphLevel = "normal", selectedLevel = "account" }) => {
   if (!chartData.length) return null;
 
   // Force re-render by creating a dependency on chartData timestamp
@@ -27,8 +27,11 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCo
     : chartData;
     
   console.log('🎯 MMS Cards - Data source:', window.aggregateDataForCards ? 'Aggregate Data' : 'Chart Data');
+  console.log('🎯 MMS Cards - Level:', selectedLevel);
   console.log('🎯 MMS Cards - Country filter from props:', selectedCountry);
+  console.log('🎯 MMS Cards - Graph level from props:', selectedGraphLevel);
   console.log('🎯 MMS Cards - Current country filter in window:', window.currentCountryFilter);
+  console.log('🎯 MMS Cards - Current graph level in window:', window.currentGraphLevel);
   console.log('🎯 MMS Cards - Data being used:', dataForCalculation);
   console.log('🎯 MMS Cards - Timestamp:', new Date().toISOString());
 
@@ -42,10 +45,24 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCo
   // MMS sells AI music generation credits in packs:
   // - India market: ₹499 per credit pack
   // - US market: ₹1700 per credit pack 
-  // Since we don't have geo breakdown, assume 80% India, 20% US based on typical distribution
-  const indiaPurchases = Math.round(totalPurchases * 0.8);
-  const usPurchases = totalPurchases - indiaPurchases;
-  const totalRevenue = (indiaPurchases * 499) + (usPurchases * 1700);
+  let indiaPurchases, usPurchases, totalRevenue;
+  
+  if (selectedLevel === "campaign" && selectedGraphLevel === "india_aggregate") {
+    // For India aggregate, all purchases are India purchases
+    indiaPurchases = totalPurchases;
+    usPurchases = 0;
+    totalRevenue = indiaPurchases * 499;
+  } else if (selectedLevel === "campaign" && selectedGraphLevel === "us_aggregate") {
+    // For US aggregate, all purchases are US purchases
+    indiaPurchases = 0;
+    usPurchases = totalPurchases;
+    totalRevenue = usPurchases * 1700;
+  } else {
+    // For normal level, assume 80% India, 20% US based on typical distribution
+    indiaPurchases = Math.round(totalPurchases * 0.8);
+    usPurchases = totalPurchases - indiaPurchases;
+    totalRevenue = (indiaPurchases * 499) + (usPurchases * 1700);
+  }
   
   // Manual ROAS Calculation
   // ROAS = Revenue / Ad Spend
@@ -69,11 +86,21 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCo
   // Debug logging with manual calculations
   console.log('🎯 MMS Cards - Manual Calculations:');
   console.log('- Data Source:', window.aggregateDataForCards ? 'API Aggregate (per_day: false)' : 'Chart Data (per_day: true)');
-  console.log('- Country Filter: Applied from URL params (check API logs)');
+  console.log('- Level:', selectedLevel);
+  console.log('- Country Filter:', selectedLevel !== "campaign" ? selectedCountry : 'N/A');
+  console.log('- Graph Level:', selectedLevel === "campaign" ? selectedGraphLevel : 'N/A');
   console.log('- Total Spend:', totalSpend.toLocaleString());
   console.log('- Total Credit Packs Sold:', totalPurchases);
-  console.log('- India Purchases (80%):', indiaPurchases, '× ₹499 =', (indiaPurchases * 499).toLocaleString());
-  console.log('- US Purchases (20%):', usPurchases, '× ₹1700 =', (usPurchases * 1700).toLocaleString());
+  if (selectedLevel === "campaign" && selectedGraphLevel === "india_aggregate") {
+    console.log('- India Purchases (100%):', indiaPurchases, '× ₹499 =', (indiaPurchases * 499).toLocaleString());
+    console.log('- US Purchases (0%):', usPurchases);
+  } else if (selectedLevel === "campaign" && selectedGraphLevel === "us_aggregate") {
+    console.log('- India Purchases (0%):', indiaPurchases);
+    console.log('- US Purchases (100%):', usPurchases, '× ₹1700 =', (usPurchases * 1700).toLocaleString());
+  } else {
+    console.log('- India Purchases (80%):', indiaPurchases, '× ₹499 =', (indiaPurchases * 499).toLocaleString());
+    console.log('- US Purchases (20%):', usPurchases, '× ₹1700 =', (usPurchases * 1700).toLocaleString());
+  }
   console.log('- Total Revenue:', totalRevenue.toLocaleString());
   console.log('- ROAS:', roas.toFixed(2) + 'x');
   console.log('- Cost per Credit Pack:', costPerPurchase.toFixed(2));
@@ -81,9 +108,20 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCo
   console.log('- CPM:', avgCpm.toFixed(2));
   console.log('- CPC:', avgCpc.toFixed(2));
   
+  // Determine the title based on the current context
+  const getCardTitle = () => {
+    if (selectedLevel === "campaign" && selectedGraphLevel === "india_aggregate") {
+      return "MMS Performance Overview - India Aggregate";
+    } else if (selectedLevel === "campaign" && selectedGraphLevel === "us_aggregate") {
+      return "MMS Performance Overview - US Aggregate";
+    } else {
+      return "MMS Performance Overview";
+    }
+  };
+
   return (
     <div className="mb-8">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">MMS Performance Overview</h2>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{getCardTitle()}</h2>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
         {/* Column 1: Ad Spends vs Revenue */}
@@ -124,7 +162,11 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCo
                 ₹{Math.round(totalRevenue).toLocaleString()}
               </p>
               <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
-                {indiaPurchases} India (₹499) + {usPurchases} US (₹1700)
+                {selectedLevel === "campaign" && selectedGraphLevel === "india_aggregate" 
+                  ? `${indiaPurchases} India purchases (₹499 each)` 
+                  : selectedLevel === "campaign" && selectedGraphLevel === "us_aggregate"
+                  ? `${usPurchases} US purchases (₹1700 each)`
+                  : `${indiaPurchases} India (₹499) + ${usPurchases} US (₹1700)`}
               </div>
             </div>
           </div>
