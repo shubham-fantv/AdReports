@@ -1,0 +1,1 @@
+Don't run rpm run dev do rpm run build to check build sucess

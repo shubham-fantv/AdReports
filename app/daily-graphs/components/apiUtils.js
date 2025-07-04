@@ -142,7 +142,7 @@ export const fetchDailyData = async (
     const sortedData = filteredChartData.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
     setChartData(sortedData);
     
-    // Store aggregate data separately for overview cards with country identifier
+    // Store aggregate data separately for overview cards
     window.aggregateDataForCards = filteredAggregateData;
     window.currentCountryFilter = selectedCountry; // Track current country filter
     
@@ -165,36 +165,15 @@ export const fetchDailyData = async (
         breakdowns: "age"
       });
       
-      // Add country breakdown for MMS age data when specific country is selected
-      if (selectedAccount === "mms" && selectedCountry !== "all") {
-        ageParams.append("breakdowns", "age,country");
-        console.log(`🌍 Adding country breakdown to age data for MMS`);
-      }
       
       const ageResponse = await fetch(`/api/daily-reports?${ageParams}`);
       const ageResult = await ageResponse.json();
       
       if (ageResult?.data?.campaigns && Array.isArray(ageResult.data.campaigns)) {
-        let ageDataToUse = ageResult.data.campaigns;
-        
-        // Filter age data by country if specific country is selected for MMS
-        if (selectedAccount === "mms" && selectedCountry !== "all") {
-          const countryCodeMap = { "india": "IN", "us": "US" };
-          const targetCountryCode = countryCodeMap[selectedCountry.toLowerCase()];
-          
-          ageDataToUse = ageResult.data.campaigns.filter(item => {
-            const match = item.country === targetCountryCode;
-            console.log(`📍 Age item country: ${item.country}, target: ${targetCountryCode}, match: ${match}`);
-            return match;
-          });
-          
-          console.log(`🔍 Age data filter results: ${ageResult.data.campaigns.length} -> ${ageDataToUse.length} items`);
-        }
-        
-        console.log("Age breakdown data:", ageDataToUse);
-        console.log("First age item structure:", ageDataToUse[0]);
-        console.log("Age field values:", ageDataToUse.map(item => ({ age: item.age, country: item.country, allKeys: Object.keys(item) })));
-        setAgeData(ageDataToUse);
+        console.log("Age breakdown data:", ageResult.data.campaigns);
+        console.log("First age item structure:", ageResult.data.campaigns[0]);
+        console.log("Age field values:", ageResult.data.campaigns.map(item => ({ age: item.age, allKeys: Object.keys(item) })));
+        setAgeData(ageResult.data.campaigns);
       } else {
         console.log("Age data campaigns is not an array or is missing:", ageResult);
         setAgeData([]);
@@ -220,36 +199,15 @@ export const fetchDailyData = async (
         breakdowns: "gender"
       });
       
-      // Add country breakdown for MMS gender data when specific country is selected
-      if (selectedAccount === "mms" && selectedCountry !== "all") {
-        genderParams.append("breakdowns", "gender,country");
-        console.log(`🌍 Adding country breakdown to gender data for MMS`);
-      }
       
       const genderResponse = await fetch(`/api/daily-reports?${genderParams}`);
       const genderResult = await genderResponse.json();
       
       if (genderResult?.data?.campaigns && Array.isArray(genderResult.data.campaigns)) {
-        let genderDataToUse = genderResult.data.campaigns;
-        
-        // Filter gender data by country if specific country is selected for MMS
-        if (selectedAccount === "mms" && selectedCountry !== "all") {
-          const countryCodeMap = { "india": "IN", "us": "US" };
-          const targetCountryCode = countryCodeMap[selectedCountry.toLowerCase()];
-          
-          genderDataToUse = genderResult.data.campaigns.filter(item => {
-            const match = item.country === targetCountryCode;
-            console.log(`📍 Gender item country: ${item.country}, target: ${targetCountryCode}, match: ${match}`);
-            return match;
-          });
-          
-          console.log(`🔍 Gender data filter results: ${genderResult.data.campaigns.length} -> ${genderDataToUse.length} items`);
-        }
-        
-        console.log("Gender breakdown data:", genderDataToUse);
-        console.log("First gender item structure:", genderDataToUse[0]);
-        console.log("Gender field values:", genderDataToUse.map(item => ({ gender: item.gender, country: item.country, allKeys: Object.keys(item) })));
-        setGenderData(genderDataToUse);
+        console.log("Gender breakdown data:", genderResult.data.campaigns);
+        console.log("First gender item structure:", genderResult.data.campaigns[0]);
+        console.log("Gender field values:", genderResult.data.campaigns.map(item => ({ gender: item.gender, allKeys: Object.keys(item) })));
+        setGenderData(genderResult.data.campaigns);
       } else {
         console.log("Gender data campaigns is not an array or is missing:", genderResult);
         setGenderData([]);

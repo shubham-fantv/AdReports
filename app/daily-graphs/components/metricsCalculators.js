@@ -97,3 +97,4 @@ export const getUniqueCampaigns = (chartData, selectedLevel) => {
   
   return Object.values(campaignMap);
 };
+
