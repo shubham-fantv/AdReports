@@ -22,13 +22,30 @@ export const calculateMmsMetrics = (chartData, getActionValue) => {
   };
   
   const totalSpend = chartData.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
-  const totalPurchases = chartData.reduce((sum, item) => sum + getActionValue(item.actions, 'purchase'), 0);
+  const totalPurchases = chartData.reduce((sum, item) => {
+    const purchases = getActionValue(item.actions, 'purchase');
+    console.log(`📦 MMS Purchase Debug - Date: ${item.date_start || item.date}, Purchases: ${purchases}, Actions:`, item.actions);
+    return sum + purchases;
+  }, 0);
   
-  // Calculate sales: India purchases * 499, US purchases * 1700
-  // For now, assume all purchases are India (can be enhanced with geo data later)
-  const totalSales = totalPurchases * 499; // Assuming all are India purchases for now
+  console.log('📊 MMS calculateMmsMetrics - Total Purchases:', totalPurchases);
   
-  const roas = totalSpend > 0 ? totalSales / totalSpend : 0;
+  // Calculate actual sales revenue using action_value from purchase actions
+  const totalSales = chartData.reduce((sum, item) => sum + getActionRevenue(item.actions, 'purchase'), 0);
+  
+  // Fallback: If no action_value data, use hardcoded calculation (India purchases * 499)
+  const fallbackSales = totalPurchases * 499;
+  
+  // Use actual sales data if available, otherwise fall back to calculation
+  const actualTotalSales = totalSales > 0 ? totalSales : fallbackSales;
+  
+  console.log('💰 MMS Revenue Calculation:');
+  console.log('- Total Purchases:', totalPurchases);
+  console.log('- Actual Revenue from API:', totalSales);
+  console.log('- Fallback Revenue (₹499 × purchases):', fallbackSales);
+  console.log('- Final Revenue Used:', actualTotalSales);
+  
+  const roas = totalSpend > 0 ? actualTotalSales / totalSpend : 0;
   const costPerPurchase = totalPurchases > 0 ? totalSpend / totalPurchases : 0;
   
   // Calculate average CPM and CPC
@@ -40,7 +57,7 @@ export const calculateMmsMetrics = (chartData, getActionValue) => {
   
   return { 
     totalSpend, 
-    totalSales, 
+    totalSales: actualTotalSales, 
     totalPurchases, 
     roas, 
     costPerPurchase, 
@@ -53,6 +70,12 @@ export const getActionValue = (actions, actionType) => {
   if (!actions || !Array.isArray(actions)) return 0;
   const action = actions.find(a => a.action_type === actionType);
   return action ? parseInt(action.value || 0) : 0;
+};
+
+export const getActionRevenue = (actions, actionType) => {
+  if (!actions || !Array.isArray(actions)) return 0;
+  const action = actions.find(a => a.action_type === actionType);
+  return action ? parseFloat(action.action_value || 0) : 0;
 };
 
 export const getUniqueCampaigns = (chartData, selectedLevel) => {

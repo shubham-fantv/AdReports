@@ -49,6 +49,7 @@ import {
   calculateSummaryMetrics, 
   calculateMmsMetrics, 
   getActionValue, 
+  getActionRevenue,
   getUniqueCampaigns 
 } from './metricsCalculators';
 import { 
@@ -87,6 +88,7 @@ export default function DailyGraphsPage() {
   const [analyzingData, setAnalyzingData] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState("default");
   const [selectedLevel, setSelectedLevel] = useState("account");
+  const [selectedCountry, setSelectedCountry] = useState("all");
 
   // Initialize default date range
   useEffect(() => {
@@ -105,12 +107,58 @@ export default function DailyGraphsPage() {
     }
   }, []);
 
-  // Fetch data when account/level changes
+  // Fetch data when account/level/country changes
   useEffect(() => {
     if (dailyStartDate && dailyEndDate && isAuthenticated) {
       handleFetchDailyData();
     }
-  }, [selectedAccount, selectedLevel, isAuthenticated]);
+  }, [selectedAccount, selectedLevel, selectedCountry, isAuthenticated]);
+
+  // Console log MMS purchase data when chartData updates
+  useEffect(() => {
+    if (selectedAccount === "mms" && selectedLevel === "account" && chartData.length > 0) {
+      const totalPurchasesOldMethod = chartData.reduce((sum, item) => {
+        const actions = item.actions || [];
+        const purchaseAction = actions.find(a => a.action_type === 'purchase');
+        return sum + (purchaseAction ? parseInt(purchaseAction.value || 0) : 0);
+      }, 0);
+      
+      const totalPurchasesCorrectMethod = chartData.reduce((sum, item) => {
+        return sum + getActionValue(item.actions, 'purchase');
+      }, 0);
+      
+      console.log('🎵 MMS Account Level Data Loaded:');
+      console.log('📊 Total Purchases (Old Method):', totalPurchasesOldMethod);
+      console.log('📊 Total Purchases (Correct Method with getActionValue):', totalPurchasesCorrectMethod);
+      console.log('📅 Date Range:', dailyStartDate, 'to', dailyEndDate);
+      console.log('📈 Daily Purchase Breakdown:', chartData.map(item => ({
+        date: item.date_start || item.date,
+        purchasesOldMethod: item.actions?.find(a => a.action_type === 'purchase')?.value || 0,
+        purchasesCorrectMethod: getActionValue(item.actions, 'purchase'),
+        spend: parseFloat(item.spend || 0),
+        clicks: parseInt(item.clicks || 0),
+        actions: item.actions,
+        // Check for revenue data in different possible locations
+        action_values: item.action_values,
+        purchase_value: item.purchase_value,
+        revenue: item.revenue,
+        sales: item.sales
+      })));
+      
+      // Check if there's actual revenue data in actions
+      console.log('💰 Revenue Analysis:', chartData.map(item => {
+        const purchaseAction = item.actions?.find(a => a.action_type === 'purchase');
+        return {
+          date: item.date_start || item.date,
+          purchaseAction: purchaseAction,
+          actionValue: purchaseAction?.action_value,
+          value: purchaseAction?.value,
+          allActionTypes: item.actions?.map(a => ({ type: a.action_type, value: a.value, action_value: a.action_value }))
+        };
+      }));
+      console.log('💰 Raw Chart Data:', chartData);
+    }
+  }, [chartData, selectedAccount, selectedLevel, dailyStartDate, dailyEndDate]);
 
   const handleFetchDailyData = () => {
     fetchDailyData(
@@ -118,6 +166,7 @@ export default function DailyGraphsPage() {
       dailyEndDate,
       selectedAccount,
       selectedLevel,
+      selectedCountry,
       setChartData,
       setAgeData,
       setGenderData,
@@ -132,7 +181,13 @@ export default function DailyGraphsPage() {
 
   // Create wrapped functions that include necessary dependencies
   const wrappedCalculateSummaryMetrics = () => calculateSummaryMetrics(chartData, getActionValue);
-  const wrappedCalculateMmsMetrics = () => calculateMmsMetrics(chartData, getActionValue);
+  const wrappedCalculateMmsMetrics = () => {
+    console.log('🔧 MMS Metrics Calculation - Chart Data:', chartData);
+    console.log('🔧 MMS Metrics Calculation - Chart Data Length:', chartData.length);
+    const result = calculateMmsMetrics(chartData, getActionValue);
+    console.log('🔧 MMS Metrics Result:', result);
+    return result;
+  };
   const wrappedGenerateAgeSpendPieChartData = () => generateAgeSpendPieChartData(ageData);
   const wrappedGenerateAgePurchasePieChartData = () => generateAgePurchasePieChartData(ageData, getActionValue);
   const wrappedGenerateGenderPurchasePieChartData = () => generateGenderPurchasePieChartData(genderData, getActionValue);
@@ -159,15 +214,17 @@ export default function DailyGraphsPage() {
     let totalPurchases = 0;
     if (account === "mms") {
       totalPurchases = data.reduce((sum, item) => {
-        const actions = item.actions || [];
-        const purchaseAction = actions.find(a => a.action_type === 'purchase');
-        return sum + (purchaseAction ? parseInt(purchaseAction.value || 0) : 0);
+        return sum + getActionValue(item.actions, 'purchase');
       }, 0);
+      console.log('🤖 AI Insights - MMS Account Level - Total Purchases (Correct Method):', totalPurchases);
+      console.log('🤖 AI Insights - MMS Purchase data breakdown:', data.map(item => ({
+        date: item.date_start || item.date,
+        purchases: getActionValue(item.actions, 'purchase'),
+        actions: item.actions
+      })));
     } else {
       totalPurchases = data.reduce((sum, item) => {
-        const actions = item.actions || [];
-        const purchaseAction = actions.find(a => a.action_type === 'purchase');
-        return sum + (purchaseAction ? parseInt(purchaseAction.value || 0) : 0);
+        return sum + getActionValue(item.actions, 'purchase');
       }, 0);
     }
     
@@ -344,12 +401,32 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
               </select>
             </div>
 
+            {/* Country Selection - Only show for MMS */}
+            {selectedAccount === "mms" && (
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                  Country
+                </label>
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => {
+                    setSelectedCountry(e.target.value);
+                    setChartData([]);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white"
+                >
+                  <option value="all">All Countries</option>
+                  <option value="india">India</option>
+                  <option value="us">US</option>
+                </select>
+              </div>
+            )}
+
             {/* Date Range Quick Buttons */}
             <div className="flex flex-wrap gap-2">
               {[
                 { label: "Last 7 days", days: 7, key: "last7" },
                 { label: "Last 14 days", days: 14, key: "last14" },
-                { label: "Last 30 days", days: 30, key: "last30" },
               ].map(range => (
                 <button
                   key={range.key}
@@ -560,11 +637,13 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
           />
         )}
 
-        {/* MMS Cards - Only show for MMS account and account level */}
-        {selectedAccount === "mms" && selectedLevel === "account" && chartData.length > 0 && (
+        {/* MMS Cards - Show for MMS account at both account and campaign level */}
+        {selectedAccount === "mms" && chartData.length > 0 && (
           <MmsPerformanceCards 
+            key={`mms-cards-${selectedCountry}-${chartData.length}`}
             chartData={chartData} 
             calculateMmsMetrics={wrappedCalculateMmsMetrics}
+            selectedCountry={selectedCountry}
           />
         )}
 
@@ -685,8 +764,8 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
           </div>
         )}
 
-        {/* VideoNation Cards - Campaign Level */}
-        {selectedAccount === "default" && selectedLevel === "campaign" && chartData.length > 0 && (
+        {/* VideoNation Cards - Show for VideoNation account at both account and campaign level */}
+        {selectedAccount === "default" && chartData.length > 0 && (
           <VideoNationPerformanceCards 
             chartData={chartData} 
             calculateSummaryMetrics={wrappedCalculateSummaryMetrics}
