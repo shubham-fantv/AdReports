@@ -62,42 +62,42 @@ export const generateIndividualMetricChart = (chartData, metric, getActionValue)
   switch (metric) {
     case 'spend':
       data = sortedData.map(item => parseFloat(item.spend || 0));
-      color = 'rgb(239, 68, 68)';
+      color = 'rgb(255, 0, 255)'; // Pure electric magenta
       label = 'Spend (₹)';
       break;
     case 'purchases':
       data = sortedData.map(item => getActionValue(item.actions, 'purchase'));
-      color = 'rgb(139, 92, 246)';
+      color = 'rgb(128, 0, 255)'; // Pure electric violet  
       label = 'Purchases';
       break;
     case 'impressions':
       data = sortedData.map(item => parseFloat(item.impressions || 0));
-      color = 'rgb(34, 197, 94)';
+      color = 'rgb(0, 255, 0)'; // Pure electric green
       label = 'Impressions';
       break;
     case 'clicks':
       data = sortedData.map(item => parseFloat(item.clicks || 0));
-      color = 'rgb(59, 130, 246)';
+      color = 'rgb(0, 255, 255)'; // Pure electric cyan
       label = 'Clicks';
       break;
     case 'ctr':
       data = sortedData.map(item => parseFloat(item.ctr || 0));
-      color = 'rgb(245, 158, 11)';
+      color = 'rgb(255, 255, 0)'; // Pure electric yellow
       label = 'Click Through Rate (%)';
       break;
     case 'add_to_cart':
       data = sortedData.map(item => getActionValue(item.actions, 'add_to_cart'));
-      color = 'rgb(16, 185, 129)';
+      color = 'rgb(0, 255, 128)'; // Electric spring green
       label = 'Add to Cart';
       break;
     case 'checkout_initiated':
       data = sortedData.map(item => getActionValue(item.actions, 'initiate_checkout'));
-      color = 'rgb(168, 85, 247)';
+      color = 'rgb(255, 128, 0)'; // Electric orange
       label = 'Checkout Initiated';
       break;
     case 'app_install':
       data = sortedData.map(item => getActionValue(item.actions, 'mobile_app_install'));
-      color = 'rgb(168, 85, 247)';
+      color = 'rgb(255, 0, 128)'; // Electric pink
       label = 'App Install';
       break;
     case 'cost_per_purchase':
@@ -106,22 +106,22 @@ export const generateIndividualMetricChart = (chartData, metric, getActionValue)
         const purchases = getActionValue(item.actions, 'purchase');
         return purchases > 0 ? spend / purchases : 0;
       });
-      color = 'rgb(168, 85, 247)';
+      color = 'rgb(128, 0, 255)'; // Pure electric violet
       label = 'Cost Per Purchase (₹)';
       break;
     case 'user_registrations':
       data = sortedData.map(item => getActionValue(item.actions, 'complete_registration'));
-      color = 'rgb(236, 72, 153)';
+      color = 'rgb(255, 0, 128)'; // Electric pink
       label = 'User Registrations';
       break;
     case 'cpm':
       data = sortedData.map(item => parseFloat(item.cpm || 0));
-      color = 'rgb(245, 158, 11)';
+      color = 'rgb(255, 255, 0)'; // Pure electric yellow
       label = 'CPM (₹)';
       break;
     case 'cpc':
       data = sortedData.map(item => parseFloat(item.cpc || 0));
-      color = 'rgb(16, 185, 129)';
+      color = 'rgb(0, 255, 128)'; // Electric spring green
       label = 'CPC (₹)';
       break;
     default:
@@ -308,8 +308,8 @@ export const generateSpendVsPurchaseChartData = (chartData, getActionValue) => {
       {
         label: 'Spend (₹)',
         data: spendData,
-        borderColor: 'rgb(239, 68, 68)',
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderColor: 'rgb(255, 0, 255)', // Pure electric magenta
+        backgroundColor: 'rgba(255, 0, 255, 0.1)',
         yAxisID: 'y',
         tension: 0,
         fill: false,
@@ -317,8 +317,8 @@ export const generateSpendVsPurchaseChartData = (chartData, getActionValue) => {
       {
         label: 'Purchases',
         data: purchaseData,
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderColor: 'rgb(0, 255, 0)', // Pure electric green
+        backgroundColor: 'rgba(0, 255, 0, 0.1)',
         yAxisID: 'y1',
         tension: 0,
         fill: false,
@@ -367,8 +367,8 @@ export const generateSpendVsPurchaseScatterData = (chartData, getActionValue) =>
       {
         label: 'Spend vs Purchases',
         data: scatterData,
-        backgroundColor: 'rgba(99, 102, 241, 0.7)',
-        borderColor: 'rgb(99, 102, 241)',
+        backgroundColor: 'rgba(0, 255, 255, 0.8)', // Pure electric cyan
+        borderColor: 'rgb(0, 255, 255)',
         borderWidth: 2,
         pointRadius: 6,
         pointHoverRadius: 8,
@@ -377,8 +377,8 @@ export const generateSpendVsPurchaseScatterData = (chartData, getActionValue) =>
       {
         label: 'Trend Line',
         data: trendLineData,
-        backgroundColor: 'rgba(239, 68, 68, 0.2)',
-        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'rgba(255, 0, 255, 0.3)', // Pure electric magenta
+        borderColor: 'rgb(255, 0, 255)',
         borderWidth: 3,
         pointRadius: 0,
         pointHoverRadius: 0,
@@ -411,8 +411,8 @@ export const generateClicksVsCtrChartData = (chartData) => {
         label: 'Daily Clicks',
         type: 'bar',
         data: clicksData,
-        backgroundColor: 'rgba(34, 197, 94, 0.7)',
-        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(0, 255, 0, 0.8)', // Pure electric green
+        borderColor: 'rgb(0, 255, 0)',
         borderWidth: 1,
         yAxisID: 'y1',
       },
@@ -420,8 +420,8 @@ export const generateClicksVsCtrChartData = (chartData) => {
         label: 'Click-Through Rate (%)',
         type: 'line',
         data: ctrData,
-        borderColor: 'rgb(239, 68, 68)',
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderColor: 'rgb(255, 0, 255)', // Pure electric magenta
+        backgroundColor: 'rgba(255, 0, 255, 0.1)',
         yAxisID: 'y',
         tension: 0,
         fill: false,
@@ -481,27 +481,27 @@ export const generateAgeSpendPieChartData = (ageData) => {
   const labels = filteredBrackets.map(([bracket]) => bracket);
   const data = filteredBrackets.map(([, spend]) => spend);
 
-  // Define colors for age brackets
+  // Define electric neon colors for age brackets
   const colors = [
-    'rgba(255, 99, 132, 0.8)',   // Red
-    'rgba(54, 162, 235, 0.8)',   // Blue
-    'rgba(255, 205, 86, 0.8)',   // Yellow
-    'rgba(75, 192, 192, 0.8)',   // Teal
-    'rgba(153, 102, 255, 0.8)',  // Purple
-    'rgba(255, 159, 64, 0.8)',   // Orange
-    'rgba(199, 199, 199, 0.8)',  // Gray
-    'rgba(83, 102, 255, 0.8)'    // Indigo
+    'rgba(255, 0, 255, 0.9)',   // Pure electric magenta
+    'rgba(0, 255, 255, 0.9)',   // Pure electric cyan  
+    'rgba(255, 255, 0, 0.9)',   // Pure electric yellow
+    'rgba(0, 255, 0, 0.9)',     // Pure electric green
+    'rgba(128, 0, 255, 0.9)',   // Pure electric violet
+    'rgba(255, 128, 0, 0.9)',   // Electric orange
+    'rgba(255, 0, 128, 0.9)',   // Electric pink
+    'rgba(0, 255, 128, 0.9)'    // Electric spring green
   ];
 
   const borderColors = [
-    'rgba(255, 99, 132, 1)',
-    'rgba(54, 162, 235, 1)',
-    'rgba(255, 205, 86, 1)',
-    'rgba(75, 192, 192, 1)',
-    'rgba(153, 102, 255, 1)',
-    'rgba(255, 159, 64, 1)',
-    'rgba(199, 199, 199, 1)',
-    'rgba(83, 102, 255, 1)'
+    'rgba(255, 0, 255, 1)',      // Pure electric magenta
+    'rgba(0, 255, 255, 1)',      // Pure electric cyan
+    'rgba(255, 255, 0, 1)',      // Pure electric yellow
+    'rgba(0, 255, 0, 1)',        // Pure electric green
+    'rgba(128, 0, 255, 1)',      // Pure electric violet
+    'rgba(255, 128, 0, 1)',      // Electric orange
+    'rgba(255, 0, 128, 1)',      // Electric pink
+    'rgba(0, 255, 128, 1)'       // Electric spring green
   ];
 
   return {
@@ -567,27 +567,27 @@ export const generateAgePurchasePieChartData = (ageData, getActionValue) => {
   const labels = filteredBrackets.map(([bracket]) => bracket);
   const data = filteredBrackets.map(([, purchases]) => purchases);
 
-  // Define colors for age brackets
+  // Define electric neon colors for age brackets
   const colors = [
-    'rgba(255, 99, 132, 0.8)',   // Red
-    'rgba(54, 162, 235, 0.8)',   // Blue
-    'rgba(255, 205, 86, 0.8)',   // Yellow
-    'rgba(75, 192, 192, 0.8)',   // Teal
-    'rgba(153, 102, 255, 0.8)',  // Purple
-    'rgba(255, 159, 64, 0.8)',   // Orange
-    'rgba(199, 199, 199, 0.8)',  // Gray
-    'rgba(83, 102, 255, 0.8)'    // Indigo
+    'rgba(255, 0, 255, 0.9)',   // Pure electric magenta
+    'rgba(0, 255, 255, 0.9)',   // Pure electric cyan  
+    'rgba(255, 255, 0, 0.9)',   // Pure electric yellow
+    'rgba(0, 255, 0, 0.9)',     // Pure electric green
+    'rgba(128, 0, 255, 0.9)',   // Pure electric violet
+    'rgba(255, 128, 0, 0.9)',   // Electric orange
+    'rgba(255, 0, 128, 0.9)',   // Electric pink
+    'rgba(0, 255, 128, 0.9)'    // Electric spring green
   ];
 
   const borderColors = [
-    'rgba(255, 99, 132, 1)',
-    'rgba(54, 162, 235, 1)',
-    'rgba(255, 205, 86, 1)',
-    'rgba(75, 192, 192, 1)',
-    'rgba(153, 102, 255, 1)',
-    'rgba(255, 159, 64, 1)',
-    'rgba(199, 199, 199, 1)',
-    'rgba(83, 102, 255, 1)'
+    'rgba(255, 0, 255, 1)',      // Pure electric magenta
+    'rgba(0, 255, 255, 1)',      // Pure electric cyan
+    'rgba(255, 255, 0, 1)',      // Pure electric yellow
+    'rgba(0, 255, 0, 1)',        // Pure electric green
+    'rgba(128, 0, 255, 1)',      // Pure electric violet
+    'rgba(255, 128, 0, 1)',      // Electric orange
+    'rgba(255, 0, 128, 1)',      // Electric pink
+    'rgba(0, 255, 128, 1)'       // Electric spring green
   ];
 
   return {
@@ -646,17 +646,17 @@ export const generateGenderPurchasePieChartData = (genderData, getActionValue) =
   const labels = filteredGenders.map(([gender]) => gender.charAt(0).toUpperCase() + gender.slice(1));
   const data = filteredGenders.map(([, purchases]) => purchases);
 
-  // Define colors for genders
+  // Define electric neon colors for genders
   const colors = [
-    'rgba(59, 130, 246, 0.8)',   // Blue for Male
-    'rgba(236, 72, 153, 0.8)',   // Pink for Female
-    'rgba(156, 163, 175, 0.8)',  // Gray for Unknown
+    'rgba(0, 255, 255, 0.9)',    // Pure electric cyan for Male
+    'rgba(255, 0, 255, 0.9)',    // Pure electric magenta for Female
+    'rgba(128, 0, 255, 0.9)',    // Pure electric violet for Unknown
   ];
 
   const borderColors = [
-    'rgba(59, 130, 246, 1)',
-    'rgba(236, 72, 153, 1)',
-    'rgba(156, 163, 175, 1)',
+    'rgba(0, 255, 255, 1)',      // Pure electric cyan
+    'rgba(255, 0, 255, 1)',      // Pure electric magenta
+    'rgba(128, 0, 255, 1)',      // Pure electric violet
   ];
 
   return {
@@ -715,17 +715,17 @@ export const generateGenderSpendPieChartData = (genderData) => {
   const labels = filteredGenders.map(([gender]) => gender.charAt(0).toUpperCase() + gender.slice(1));
   const data = filteredGenders.map(([, spend]) => spend);
 
-  // Define colors for genders
+  // Define electric neon colors for genders
   const colors = [
-    'rgba(59, 130, 246, 0.8)',   // Blue for Male
-    'rgba(236, 72, 153, 0.8)',   // Pink for Female
-    'rgba(156, 163, 175, 0.8)',  // Gray for Unknown
+    'rgba(0, 255, 255, 0.9)',    // Pure electric cyan for Male
+    'rgba(255, 0, 255, 0.9)',    // Pure electric magenta for Female
+    'rgba(128, 0, 255, 0.9)',    // Pure electric violet for Unknown
   ];
 
   const borderColors = [
-    'rgba(59, 130, 246, 1)',
-    'rgba(236, 72, 153, 1)',
-    'rgba(156, 163, 175, 1)',
+    'rgba(0, 255, 255, 1)',      // Pure electric cyan
+    'rgba(255, 0, 255, 1)',      // Pure electric magenta
+    'rgba(128, 0, 255, 1)',      // Pure electric violet
   ];
 
   return {

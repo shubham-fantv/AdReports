@@ -22,10 +22,10 @@ export const getChartOptions = (theme) => ({
       }
     },
     tooltip: {
-      backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+      backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(255, 255, 255, 0.8)',
       titleColor: theme === 'dark' ? '#ffffff' : '#000000',
       bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
-      borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+      borderColor: theme === 'dark' ? 'rgba(139, 69, 255, 0.5)' : '#d1d5db',
       borderWidth: 1,
       cornerRadius: 8,
       displayColors: true,
@@ -62,10 +62,10 @@ export const getChartOptions = (theme) => ({
     y: {
       beginAtZero: true,
       grid: {
-        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        color: theme === 'dark' ? 'rgba(139, 69, 255, 0.15)' : 'rgba(156, 163, 175, 0.2)',
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 11
         }
@@ -73,10 +73,10 @@ export const getChartOptions = (theme) => ({
     },
     x: {
       grid: {
-        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        color: theme === 'dark' ? 'rgba(139, 69, 255, 0.15)' : 'rgba(156, 163, 175, 0.2)',
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 11
         }
@@ -97,10 +97,10 @@ export const getDualAxisChartOptions = (theme) => ({
       display: false,
     },
     tooltip: {
-      backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+      backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(255, 255, 255, 0.8)',
       titleColor: theme === 'dark' ? '#ffffff' : '#000000',
       bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
-      borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+      borderColor: theme === 'dark' ? 'rgba(139, 69, 255, 0.5)' : '#d1d5db',
       borderWidth: 1,
     }
   },
@@ -110,17 +110,17 @@ export const getDualAxisChartOptions = (theme) => ({
       title: {
         display: true,
         text: 'Date',
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 12,
           weight: 'bold'
         }
       },
       grid: {
-        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        color: theme === 'dark' ? 'rgba(139, 69, 255, 0.15)' : 'rgba(156, 163, 175, 0.2)',
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 11
         }
@@ -140,10 +140,10 @@ export const getDualAxisChartOptions = (theme) => ({
         }
       },
       grid: {
-        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        color: theme === 'dark' ? 'rgba(139, 69, 255, 0.15)' : 'rgba(156, 163, 175, 0.2)',
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 11
         },
@@ -169,7 +169,7 @@ export const getDualAxisChartOptions = (theme) => ({
         drawOnChartArea: false,
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 11
         }
@@ -189,10 +189,10 @@ export const getScatterChartOptions = (theme) => ({
       display: false,
     },
     tooltip: {
-      backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+      backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(255, 255, 255, 0.8)',
       titleColor: theme === 'dark' ? '#ffffff' : '#000000',
       bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
-      borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+      borderColor: theme === 'dark' ? 'rgba(139, 69, 255, 0.5)' : '#d1d5db',
       borderWidth: 1,
       callbacks: {
         title: function(context) {
@@ -215,17 +215,17 @@ export const getScatterChartOptions = (theme) => ({
       title: {
         display: true,
         text: 'Spend (₹)',
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 11,
           weight: 'bold'
         }
       },
       grid: {
-        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        color: theme === 'dark' ? 'rgba(139, 69, 255, 0.15)' : 'rgba(156, 163, 175, 0.2)',
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 10
         },
@@ -240,17 +240,17 @@ export const getScatterChartOptions = (theme) => ({
       title: {
         display: true,
         text: 'Purchases',
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 11,
           weight: 'bold'
         }
       },
       grid: {
-        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        color: theme === 'dark' ? 'rgba(139, 69, 255, 0.15)' : 'rgba(156, 163, 175, 0.2)',
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 10
         }
@@ -271,10 +271,10 @@ export const getBarWithLineChartOptions = (theme) => ({
       display: false,
     },
     tooltip: {
-      backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+      backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(255, 255, 255, 0.8)',
       titleColor: theme === 'dark' ? '#ffffff' : '#000000',
       bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
-      borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+      borderColor: theme === 'dark' ? 'rgba(139, 69, 255, 0.5)' : '#d1d5db',
       borderWidth: 1,
       callbacks: {
         label: function(context) {
@@ -295,17 +295,17 @@ export const getBarWithLineChartOptions = (theme) => ({
       title: {
         display: true,
         text: 'Date',
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 11,
           weight: 'bold'
         }
       },
       grid: {
-        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        color: theme === 'dark' ? 'rgba(139, 69, 255, 0.15)' : 'rgba(156, 163, 175, 0.2)',
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 10
         }
@@ -325,10 +325,10 @@ export const getBarWithLineChartOptions = (theme) => ({
         }
       },
       grid: {
-        color: theme === 'dark' ? 'rgba(156, 163, 175, 0.3)' : 'rgba(156, 163, 175, 0.2)',
+        color: theme === 'dark' ? 'rgba(139, 69, 255, 0.15)' : 'rgba(156, 163, 175, 0.2)',
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 10
         },
@@ -354,7 +354,7 @@ export const getBarWithLineChartOptions = (theme) => ({
         drawOnChartArea: false,
       },
       ticks: {
-        color: theme === 'dark' ? '#d1d5db' : '#6b7280',
+        color: theme === 'dark' ? '#ffffff' : '#6b7280',
         font: {
           size: 10
         },
@@ -374,10 +374,10 @@ export const getPieChartOptions = (theme) => ({
       display: false,
     },
     tooltip: {
-      backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+      backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.95)' : 'rgba(255, 255, 255, 0.8)',
       titleColor: theme === 'dark' ? '#ffffff' : '#000000',
       bodyColor: theme === 'dark' ? '#ffffff' : '#000000',
-      borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db',
+      borderColor: theme === 'dark' ? 'rgba(139, 69, 255, 0.5)' : '#d1d5db',
       borderWidth: 1,
     }
   },

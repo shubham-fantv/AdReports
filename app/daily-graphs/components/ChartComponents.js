@@ -10,7 +10,7 @@ export const AgeSpendPieChart = ({ ageData, generateAgeSpendPieChartData, theme 
   if (!ageSpendPieData) return null;
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spend Distribution by Age Groups</h3>
@@ -98,7 +98,7 @@ export const AgePurchasePieChart = ({ ageData, generateAgePurchasePieChartData, 
   if (!agePurchasePieData) return null;
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Purchase Distribution by Age Groups</h3>
@@ -186,7 +186,7 @@ export const GenderPurchasePieChart = ({ genderData, generateGenderPurchasePieCh
   if (!genderPurchasePieData) return null;
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Purchase Distribution by Gender</h3>
@@ -274,7 +274,7 @@ export const GenderSpendPieChart = ({ genderData, generateGenderSpendPieChartDat
   if (!genderSpendPieData) return null;
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spend Distribution by Gender</h3>
@@ -408,7 +408,7 @@ export const SideBySideCharts = ({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       
       {/* Spend vs Purchase Scatter Plot */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
         <div className="flex flex-col mb-6">
           <div className="mb-3">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spend vs Purchases Correlation</h3>
@@ -435,7 +435,7 @@ export const SideBySideCharts = ({
       </div>
 
       {/* Clicks vs CTR Dual-Axis Chart */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
         <div className="flex flex-col mb-6">
           <div className="mb-3">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Daily Clicks vs Click-Through Rate</h3>
@@ -674,7 +674,7 @@ export const DeviceBreakdownTable = ({ deviceData, getActionValue, theme }) => {
 
   return (
     <div className="w-1/2">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center mr-3">

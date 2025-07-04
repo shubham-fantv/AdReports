@@ -31,11 +31,11 @@ export default function LoginForm({ onLoginSuccess }) {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
+      <div className="bg-white/90 dark:bg-gray-800 rounded-3xl shadow-2xl border border-white/30 dark:border-gray-700 overflow-hidden backdrop-blur-xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-center">
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-6 text-center shadow-lg">
           <h1 className="text-2xl font-bold text-white mb-2">Ad Reports Dashboard</h1>
-          <p className="text-blue-100 text-sm">Welcome back! Please sign in to continue.</p>
+          <p className="text-purple-100 text-sm">Welcome back! Please sign in to continue.</p>
         </div>
 
         {/* Form */}
@@ -80,7 +80,7 @@ export default function LoginForm({ onLoginSuccess }) {
             <button
               type="submit"
               disabled={loggingIn}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transform hover:-translate-y-0.5"
             >
               {loggingIn ? "Signing In..." : "Sign In"}
             </button>
@@ -88,7 +88,7 @@ export default function LoginForm({ onLoginSuccess }) {
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 dark:bg-gray-900 px-8 py-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="bg-white/50 dark:bg-gray-900 px-8 py-4 border-t border-white/20 dark:border-gray-700 backdrop-blur-sm">
           <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
             Secure access to your advertising analytics dashboard
           </p>

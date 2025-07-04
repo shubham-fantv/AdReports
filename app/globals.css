@@ -1,28 +1,39 @@
 @import "tailwindcss";
 
-/* Modern Dark Mode Theme */
+/* Modern Dark Mode Theme - Inspired by FinanceTracker */
 .dark {
   color-scheme: dark;
 }
 
-/* Main backgrounds and text */
+/* Main backgrounds and text - Updated to match inspiration */
 .dark body {
-  background-color: #0f172a !important; /* slate-900 */
-  color: #f8fafc !important; /* slate-50 */
+  background-color: #0a0a0a !important; /* Very dark background like in the inspiration */
+  color: #ffffff !important; /* Pure white text */
 }
 
-/* Card and container backgrounds */
+/* Enhanced card and container backgrounds */
 .dark .bg-white {
-  background-color: #1e293b !important; /* slate-800 */
-  border-color: #334155 !important; /* slate-700 */
+  background-color: #1a1a1a !important; /* Dark card background */
+  border: 1px solid #2a2a2a !important; /* Subtle border */
+  border-radius: 16px !important; /* Rounded corners like inspiration */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important; /* Modern shadow */
 }
 
 .dark .bg-gray-50 {
-  background-color: #0f172a !important; /* slate-900 */
+  background-color: #0f0f0f !important; /* Slightly lighter than main background */
 }
 
 .dark .bg-gray-100 {
-  background-color: #1e293b !important; /* slate-800 */
+  background-color: #1a1a1a !important; /* Card background */
+}
+
+.dark .bg-gray-800 {
+  background-color: #1a1a1a !important; /* Card background */
+  border: 1px solid #2a2a2a !important; /* Consistent border */
+}
+
+.dark .bg-gray-700\/50 {
+  background-color: rgba(42, 42, 42, 0.5) !important; /* Hover state */
 }
 
 /* Typography - High contrast for readability */
@@ -31,71 +42,100 @@
 }
 
 .dark p {
-  color: #e2e8f0 !important; /* slate-200 - excellent readability */
+  color: #a0a0a0 !important; /* Light gray for secondary text */
 }
 
 .dark .text-gray-900 {
-  color: #f8fafc !important; /* slate-50 */
+  color: #ffffff !important; /* Pure white for primary text */
 }
 
 .dark .text-gray-800 {
-  color: #e2e8f0 !important; /* slate-200 */
+  color: #ffffff !important; /* Pure white for primary text */
 }
 
 .dark .text-gray-700 {
-  color: #cbd5e1 !important; /* slate-300 */
+  color: #ffffff !important; /* Pure white for primary text */
 }
 
 .dark .text-gray-600 {
-  color: #94a3b8 !important; /* slate-400 */
+  color: #a0a0a0 !important; /* Light gray for secondary text */
 }
 
 .dark .text-gray-500 {
-  color: #64748b !important; /* slate-500 */
+  color: #a0a0a0 !important; /* Light gray for secondary text */
+}
+
+.dark .text-gray-400 {
+  color: #a0a0a0 !important; /* Light gray for secondary text */
+}
+
+.dark .text-white {
+  color: #ffffff !important; /* Pure white */
 }
 
 /* Borders and dividers */
 .dark .border-gray-200 {
-  border-color: #334155 !important; /* slate-700 */
+  border-color: #2a2a2a !important; /* Subtle dark border */
 }
 
 .dark .border-gray-300 {
-  border-color: #475569 !important; /* slate-600 */
+  border-color: #2a2a2a !important; /* Subtle dark border */
+}
+
+.dark .border-gray-700 {
+  border-color: #2a2a2a !important; /* Subtle dark border */
+}
+
+.dark .border-gray-600 {
+  border-color: #2a2a2a !important; /* Subtle dark border */
 }
 
 .dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #334155 !important; /* slate-700 */
+  border-color: #2a2a2a !important; /* Subtle dark border */
+}
+
+.dark .border-gray-100 {
+  border-color: #2a2a2a !important; /* Subtle dark border */
 }
 
 /* Form elements */
 .dark input, .dark select, .dark textarea {
-  background-color: #1e293b !important; /* slate-800 */
-  border-color: #475569 !important; /* slate-600 */
-  color: #f8fafc !important; /* slate-50 */
+  background-color: #1a1a1a !important; /* Dark card background */
+  border-color: #2a2a2a !important; /* Subtle border */
+  color: #ffffff !important; /* Pure white text */
 }
 
 .dark input:focus, .dark select:focus, .dark textarea:focus {
   border-color: #3b82f6 !important; /* blue-500 */
-  background-color: #0f172a !important; /* slate-900 */
+  background-color: #1a1a1a !important; /* Keep same background */
 }
 
 /* Tables */
 .dark table {
-  background-color: #1e293b !important; /* slate-800 */
+  background-color: #1a1a1a !important; /* Dark card background */
 }
 
 .dark th {
-  background-color: #334155 !important; /* slate-700 */
-  color: #f8fafc !important; /* slate-50 */
+  background-color: #1a1a1a !important; /* Dark card background */
+  color: #ffffff !important; /* Pure white text */
 }
 
 .dark td {
-  color: #e2e8f0 !important; /* slate-200 */
-  border-color: #334155 !important; /* slate-700 */
+  color: #ffffff !important; /* Pure white text */
+  border-color: #2a2a2a !important; /* Subtle border */
 }
 
 .dark tr:hover {
-  background-color: #475569 !important; /* slate-600 */
+  background-color: #252525 !important; /* Slightly lighter hover */
+}
+
+/* Hover states for cards and interactive elements */
+.dark .hover\:bg-gray-50:hover {
+  background-color: #252525 !important; /* Hover state */
+}
+
+.dark .hover\:bg-gray-700\/50:hover {
+  background-color: #252525 !important; /* Hover state */
 }
 
 /* Buttons and interactive elements */
@@ -109,25 +149,185 @@
 
 /* Modern glass morphism effects */
 .dark .backdrop-blur-sm {
-  background-color: rgba(30, 41, 59, 0.8) !important; /* slate-800 with opacity */
+  background-color: rgba(26, 26, 26, 0.8) !important; /* Dark card with opacity */
 }
 
 /* Gradient backgrounds for cards */
 .dark .bg-gradient-to-br {
-  background: linear-gradient(to bottom right, #0f172a, #1e293b) !important;
+  background: linear-gradient(to bottom right, #0a0a0a, #1a1a1a) !important;
 }
 
-/* Improved shadows for depth */
+/* Modern shadows for depth - Updated to match inspiration */
 .dark .shadow-sm {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
 }
 
 .dark .shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
 }
 
 .dark .shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Additional background styles */
+.dark .bg-gray-700\/30 {
+  background-color: rgba(42, 42, 42, 0.3) !important;
+}
+
+/* Chart-specific dark theme styles */
+.dark canvas {
+  background-color: transparent !important;
+  border-radius: 12px !important;
+}
+
+/* Enhanced chart container styling */
+.dark .chart-container {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
+  border: 1px solid rgba(139, 69, 255, 0.2) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(139, 69, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+/* Chart card hover effects */
+.dark .chart-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(139, 69, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Neon glow effects for chart elements */
+.dark .chart-container canvas {
+  filter: drop-shadow(0 0 5px rgba(139, 69, 255, 0.3)) !important;
+}
+
+/* Enhanced focus effects for interactive elements */
+.dark .chart-container:hover canvas {
+  filter: drop-shadow(0 0 8px rgba(139, 69, 255, 0.4)) !important;
+  transition: filter 0.3s ease !important;
+}
+
+/* New dark theme enhancements inspired by screenshots */
+.dark .card-modern {
+  background-color: #1a1a1a !important;
+  border: 1px solid #2a2a2a !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .card-modern:hover {
+  border-color: #3a3a3a !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Icon containers with vibrant colors */
+.dark .icon-purple {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7) !important;
+}
+
+.dark .icon-green {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+}
+
+.dark .icon-blue {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+}
+
+.dark .icon-orange {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+}
+
+.dark .icon-cyan {
+  background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+}
+
+/* Text improvements */
+.dark .text-muted {
+  color: #888888 !important;
+}
+
+.dark .text-subtitle {
+  color: #cccccc !important;
+}
+
+/* Light Theme Styles - Inspired by glassmorphism dashboard design */
+body {
+  background: linear-gradient(135deg, #ddd6fe 0%, #e9d5ff 25%, #f3e8ff 50%, #fae8ff 75%, #fdf2f8 100%) !important;
+  min-height: 100vh;
+}
+
+.dark body {
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
+}
+
+/* Enhanced light theme card styling with glassmorphism */
+.bg-white:not(.dark .bg-white) {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 
+    0 8px 32px rgba(139, 69, 255, 0.12),
+    0 4px 16px rgba(168, 85, 247, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+.bg-gray-50:not(.dark .bg-gray-50) {
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Enhanced light theme shadows with gradient glow */
+.shadow-sm:not(.dark .shadow-sm) {
+  box-shadow: 
+    0 4px 16px rgba(139, 69, 255, 0.15),
+    0 2px 8px rgba(168, 85, 247, 0.1) !important;
+}
+
+.shadow-lg:not(.dark .shadow-lg) {
+  box-shadow: 
+    0 20px 60px rgba(139, 69, 255, 0.18),
+    0 8px 32px rgba(168, 85, 247, 0.12),
+    0 4px 16px rgba(147, 51, 234, 0.08) !important;
+}
+
+/* Enhanced light theme borders with gradient colors */
+.border-gray-200:not(.dark .border-gray-200) {
+  border-color: rgba(139, 69, 255, 0.15) !important;
+}
+
+.border-gray-300:not(.dark .border-gray-300) {
+  border-color: rgba(139, 69, 255, 0.2) !important;
+}
+
+/* Light theme hover effects */
+.bg-white:not(.dark .bg-white):hover {
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 
+    0 12px 40px rgba(139, 69, 255, 0.16),
+    0 6px 20px rgba(168, 85, 247, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+  transform: translateY(-2px) !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Light theme button enhancements */
+.bg-gradient-to-r:not(.dark .bg-gradient-to-r) {
+  box-shadow: 0 4px 16px rgba(139, 69, 255, 0.3) !important;
+}
+
+/* Light theme backdrop blur for headers */
+.backdrop-blur-xl:not(.dark .backdrop-blur-xl) {
+  backdrop-filter: blur(24px) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
 }
 
 /* Base styles */
@@ -141,7 +341,7 @@
   }
   
   body {
-    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-50 font-medium;
+    @apply text-gray-900 font-medium;
     line-height: 1.6;
   }
   

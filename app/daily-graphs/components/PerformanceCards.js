@@ -19,7 +19,7 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics }) => {
           </h3>
           <div className="space-y-4">
             {/* Ad Spend Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600 p-6 hover:shadow-lg transition-all duration-200 group">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Ad Spend
@@ -37,7 +37,7 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics }) => {
             </div>
 
             {/* Sales Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600 p-6 hover:shadow-lg transition-all duration-200 group">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Sales Revenue
@@ -63,7 +63,7 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics }) => {
           </h3>
           <div className="space-y-4">
             {/* ROAS Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600 p-6 hover:shadow-lg transition-all duration-200 group">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   ROAS
@@ -81,7 +81,7 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics }) => {
             </div>
 
             {/* Cost Per Purchase Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600 p-6 hover:shadow-lg transition-all duration-200 group">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   Cost Per Purchase
@@ -107,7 +107,7 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics }) => {
           </h3>
           <div className="space-y-4">
             {/* CPM Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600 p-6 hover:shadow-lg transition-all duration-200 group">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   CPM
@@ -125,7 +125,7 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics }) => {
             </div>
 
             {/* CPC Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-200 group">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600 p-6 hover:shadow-lg transition-all duration-200 group">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   CPC
