@@ -481,28 +481,20 @@ export const generateAgeSpendPieChartData = (ageData) => {
   const labels = filteredBrackets.map(([bracket]) => bracket);
   const data = filteredBrackets.map(([, spend]) => spend);
 
-  // Define electric neon colors for age brackets
-  const colors = [
-    'rgba(255, 0, 255, 0.9)',   // Pure electric magenta
-    'rgba(0, 255, 255, 0.9)',   // Pure electric cyan  
-    'rgba(255, 255, 0, 0.9)',   // Pure electric yellow
-    'rgba(0, 255, 0, 0.9)',     // Pure electric green
-    'rgba(128, 0, 255, 0.9)',   // Pure electric violet
-    'rgba(255, 128, 0, 0.9)',   // Electric orange
-    'rgba(255, 0, 128, 0.9)',   // Electric pink
-    'rgba(0, 255, 128, 0.9)'    // Electric spring green
-  ];
+  // Define MMS age group colors based on specific brackets
+  const ageColorMap = {
+    '18-24': { bg: 'rgba(225, 87, 89, 0.9)', border: 'rgba(225, 87, 89, 1)' },     // Soft Red #E15759
+    '25-34': { bg: 'rgba(118, 183, 178, 0.9)', border: 'rgba(118, 183, 178, 1)' }, // Teal #76B7B2
+    '35-44': { bg: 'rgba(78, 121, 167, 0.9)', border: 'rgba(78, 121, 167, 1)' },   // Classic Blue #4E79A7
+    '45-54': { bg: 'rgba(242, 142, 44, 0.9)', border: 'rgba(242, 142, 44, 1)' },   // Burnt Orange #F28E2C
+    '55-64': { bg: 'rgba(89, 161, 79, 0.9)', border: 'rgba(89, 161, 79, 1)' },     // Forest Green #59A14F
+    '65+': { bg: 'rgba(175, 122, 161, 0.9)', border: 'rgba(175, 122, 161, 1)' },   // Mauve #AF7AA1
+    '13-17': { bg: 'rgba(225, 87, 89, 0.9)', border: 'rgba(225, 87, 89, 1)' },     // Fallback to Soft Red
+    'unknown': { bg: 'rgba(186, 176, 171, 0.9)', border: 'rgba(186, 176, 171, 1)' } // Slate Gray #BAB0AB
+  };
 
-  const borderColors = [
-    'rgba(255, 0, 255, 1)',      // Pure electric magenta
-    'rgba(0, 255, 255, 1)',      // Pure electric cyan
-    'rgba(255, 255, 0, 1)',      // Pure electric yellow
-    'rgba(0, 255, 0, 1)',        // Pure electric green
-    'rgba(128, 0, 255, 1)',      // Pure electric violet
-    'rgba(255, 128, 0, 1)',      // Electric orange
-    'rgba(255, 0, 128, 1)',      // Electric pink
-    'rgba(0, 255, 128, 1)'       // Electric spring green
-  ];
+  const colors = labels.map(label => ageColorMap[label]?.bg || 'rgba(186, 176, 171, 0.9)');
+  const borderColors = labels.map(label => ageColorMap[label]?.border || 'rgba(186, 176, 171, 1)');
 
   return {
     labels,
@@ -510,8 +502,8 @@ export const generateAgeSpendPieChartData = (ageData) => {
       {
         label: 'Spend by Age Group',
         data,
-        backgroundColor: colors.slice(0, labels.length),
-        borderColor: borderColors.slice(0, labels.length),
+        backgroundColor: colors,
+        borderColor: borderColors,
         borderWidth: 2,
       },
     ],
@@ -567,28 +559,20 @@ export const generateAgePurchasePieChartData = (ageData, getActionValue) => {
   const labels = filteredBrackets.map(([bracket]) => bracket);
   const data = filteredBrackets.map(([, purchases]) => purchases);
 
-  // Define electric neon colors for age brackets
-  const colors = [
-    'rgba(255, 0, 255, 0.9)',   // Pure electric magenta
-    'rgba(0, 255, 255, 0.9)',   // Pure electric cyan  
-    'rgba(255, 255, 0, 0.9)',   // Pure electric yellow
-    'rgba(0, 255, 0, 0.9)',     // Pure electric green
-    'rgba(128, 0, 255, 0.9)',   // Pure electric violet
-    'rgba(255, 128, 0, 0.9)',   // Electric orange
-    'rgba(255, 0, 128, 0.9)',   // Electric pink
-    'rgba(0, 255, 128, 0.9)'    // Electric spring green
-  ];
+  // Define MMS age group colors based on specific brackets
+  const ageColorMap = {
+    '18-24': { bg: 'rgba(225, 87, 89, 0.9)', border: 'rgba(225, 87, 89, 1)' },     // Soft Red #E15759
+    '25-34': { bg: 'rgba(118, 183, 178, 0.9)', border: 'rgba(118, 183, 178, 1)' }, // Teal #76B7B2
+    '35-44': { bg: 'rgba(78, 121, 167, 0.9)', border: 'rgba(78, 121, 167, 1)' },   // Classic Blue #4E79A7
+    '45-54': { bg: 'rgba(242, 142, 44, 0.9)', border: 'rgba(242, 142, 44, 1)' },   // Burnt Orange #F28E2C
+    '55-64': { bg: 'rgba(89, 161, 79, 0.9)', border: 'rgba(89, 161, 79, 1)' },     // Forest Green #59A14F
+    '65+': { bg: 'rgba(175, 122, 161, 0.9)', border: 'rgba(175, 122, 161, 1)' },   // Mauve #AF7AA1
+    '13-17': { bg: 'rgba(225, 87, 89, 0.9)', border: 'rgba(225, 87, 89, 1)' },     // Fallback to Soft Red
+    'unknown': { bg: 'rgba(186, 176, 171, 0.9)', border: 'rgba(186, 176, 171, 1)' } // Slate Gray #BAB0AB
+  };
 
-  const borderColors = [
-    'rgba(255, 0, 255, 1)',      // Pure electric magenta
-    'rgba(0, 255, 255, 1)',      // Pure electric cyan
-    'rgba(255, 255, 0, 1)',      // Pure electric yellow
-    'rgba(0, 255, 0, 1)',        // Pure electric green
-    'rgba(128, 0, 255, 1)',      // Pure electric violet
-    'rgba(255, 128, 0, 1)',      // Electric orange
-    'rgba(255, 0, 128, 1)',      // Electric pink
-    'rgba(0, 255, 128, 1)'       // Electric spring green
-  ];
+  const colors = labels.map(label => ageColorMap[label]?.bg || 'rgba(186, 176, 171, 0.9)');
+  const borderColors = labels.map(label => ageColorMap[label]?.border || 'rgba(186, 176, 171, 1)');
 
   return {
     labels,
@@ -596,8 +580,8 @@ export const generateAgePurchasePieChartData = (ageData, getActionValue) => {
       {
         label: 'Purchases by Age Group',
         data,
-        backgroundColor: colors.slice(0, labels.length),
-        borderColor: borderColors.slice(0, labels.length),
+        backgroundColor: colors,
+        borderColor: borderColors,
         borderWidth: 2,
       },
     ],
@@ -646,18 +630,15 @@ export const generateGenderPurchasePieChartData = (genderData, getActionValue) =
   const labels = filteredGenders.map(([gender]) => gender.charAt(0).toUpperCase() + gender.slice(1));
   const data = filteredGenders.map(([, purchases]) => purchases);
 
-  // Define electric neon colors for genders
-  const colors = [
-    'rgba(0, 255, 255, 0.9)',    // Pure electric cyan for Male
-    'rgba(255, 0, 255, 0.9)',    // Pure electric magenta for Female
-    'rgba(128, 0, 255, 0.9)',    // Pure electric violet for Unknown
-  ];
+  // Define MMS gender colors based on specification
+  const genderColorMap = {
+    'male': { bg: 'rgba(237, 201, 73, 0.9)', border: 'rgba(237, 201, 73, 1)' },     // Golden Yellow #EDC949
+    'female': { bg: 'rgba(255, 157, 167, 0.9)', border: 'rgba(255, 157, 167, 1)' }, // Warm Pink #FF9DA7
+    'unknown': { bg: 'rgba(186, 176, 171, 0.9)', border: 'rgba(186, 176, 171, 1)' } // Slate Gray #BAB0AB
+  };
 
-  const borderColors = [
-    'rgba(0, 255, 255, 1)',      // Pure electric cyan
-    'rgba(255, 0, 255, 1)',      // Pure electric magenta
-    'rgba(128, 0, 255, 1)',      // Pure electric violet
-  ];
+  const colors = filteredGenders.map(([gender]) => genderColorMap[gender]?.bg || 'rgba(186, 176, 171, 0.9)');
+  const borderColors = filteredGenders.map(([gender]) => genderColorMap[gender]?.border || 'rgba(186, 176, 171, 1)');
 
   return {
     labels,
@@ -665,8 +646,8 @@ export const generateGenderPurchasePieChartData = (genderData, getActionValue) =
       {
         label: 'Purchases by Gender',
         data,
-        backgroundColor: colors.slice(0, labels.length),
-        borderColor: borderColors.slice(0, labels.length),
+        backgroundColor: colors,
+        borderColor: borderColors,
         borderWidth: 2,
       },
     ],
@@ -715,18 +696,15 @@ export const generateGenderSpendPieChartData = (genderData) => {
   const labels = filteredGenders.map(([gender]) => gender.charAt(0).toUpperCase() + gender.slice(1));
   const data = filteredGenders.map(([, spend]) => spend);
 
-  // Define electric neon colors for genders
-  const colors = [
-    'rgba(0, 255, 255, 0.9)',    // Pure electric cyan for Male
-    'rgba(255, 0, 255, 0.9)',    // Pure electric magenta for Female
-    'rgba(128, 0, 255, 0.9)',    // Pure electric violet for Unknown
-  ];
+  // Define MMS gender colors based on specification
+  const genderColorMap = {
+    'male': { bg: 'rgba(237, 201, 73, 0.9)', border: 'rgba(237, 201, 73, 1)' },     // Golden Yellow #EDC949
+    'female': { bg: 'rgba(255, 157, 167, 0.9)', border: 'rgba(255, 157, 167, 1)' }, // Warm Pink #FF9DA7
+    'unknown': { bg: 'rgba(186, 176, 171, 0.9)', border: 'rgba(186, 176, 171, 1)' } // Slate Gray #BAB0AB
+  };
 
-  const borderColors = [
-    'rgba(0, 255, 255, 1)',      // Pure electric cyan
-    'rgba(255, 0, 255, 1)',      // Pure electric magenta
-    'rgba(128, 0, 255, 1)',      // Pure electric violet
-  ];
+  const colors = filteredGenders.map(([gender]) => genderColorMap[gender]?.bg || 'rgba(186, 176, 171, 0.9)');
+  const borderColors = filteredGenders.map(([gender]) => genderColorMap[gender]?.border || 'rgba(186, 176, 171, 1)');
 
   return {
     labels,
@@ -734,8 +712,8 @@ export const generateGenderSpendPieChartData = (genderData) => {
       {
         label: 'Spend by Gender',
         data,
-        backgroundColor: colors.slice(0, labels.length),
-        borderColor: borderColors.slice(0, labels.length),
+        backgroundColor: colors,
+        borderColor: borderColors,
         borderWidth: 2,
       },
     ],

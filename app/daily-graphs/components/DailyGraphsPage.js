@@ -105,12 +105,12 @@ export default function DailyGraphsPage() {
     }
   }, []);
 
-  // Fetch data when dates or selection changes
+  // Fetch data when account/level changes
   useEffect(() => {
     if (dailyStartDate && dailyEndDate && isAuthenticated) {
       handleFetchDailyData();
     }
-  }, [dailyStartDate, dailyEndDate, selectedAccount, selectedLevel, isAuthenticated]);
+  }, [selectedAccount, selectedLevel, isAuthenticated]);
 
   const handleFetchDailyData = () => {
     fetchDailyData(
@@ -141,6 +141,131 @@ export default function DailyGraphsPage() {
   const wrappedGenerateSpendVsPurchaseScatterData = () => generateSpendVsPurchaseScatterData(chartData, getActionValue);
   const wrappedGenerateClicksVsCtrChartData = () => generateClicksVsCtrChartData(chartData);
 
+  // AI Insights generation function
+  const generateAIInsights = (data, account) => {
+    if (!data || data.length === 0) return "No campaign data available for analysis. Launch some campaigns to get AI-powered insights for your platform! 🚀";
+    
+    // Platform context for better insights
+    const platformContext = account === "mms" 
+      ? "MMS (AI music generation mobile app with credit pack purchasing model)"
+      : "VideoNation (AI video/image generation web platform with subscription model)";
+    
+    const totalSpend = data.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
+    const totalImpressions = data.reduce((sum, item) => sum + parseFloat(item.impressions || 0), 0);
+    const totalClicks = data.reduce((sum, item) => sum + parseFloat(item.clicks || 0), 0);
+    const avgCTR = data.reduce((sum, item) => sum + parseFloat(item.ctr || 0), 0) / data.length;
+    const avgCPC = totalClicks > 0 ? totalSpend / totalClicks : 0;
+    
+    let totalPurchases = 0;
+    if (account === "mms") {
+      totalPurchases = data.reduce((sum, item) => {
+        const actions = item.actions || [];
+        const purchaseAction = actions.find(a => a.action_type === 'purchase');
+        return sum + (purchaseAction ? parseInt(purchaseAction.value || 0) : 0);
+      }, 0);
+    } else {
+      totalPurchases = data.reduce((sum, item) => {
+        const actions = item.actions || [];
+        const purchaseAction = actions.find(a => a.action_type === 'purchase');
+        return sum + (purchaseAction ? parseInt(purchaseAction.value || 0) : 0);
+      }, 0);
+    }
+    
+    const costPerPurchase = totalPurchases > 0 ? totalSpend / totalPurchases : 0;
+    const conversionRate = totalClicks > 0 ? (totalPurchases / totalClicks) * 100 : 0;
+    const efficiency = totalPurchases > 0 ? (totalPurchases / totalSpend) * 1000 : 0;
+    const impressionToClickRate = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+    const burnRate = totalSpend / data.length; // Daily burn rate
+    
+    // Advanced GenAI startup metrics
+    const viralCoefficient = conversionRate > 2 ? "High" : conversionRate > 1 ? "Medium" : "Low";
+    const productMarketFit = conversionRate > 2 && avgCTR > 2 ? "Strong signals" : conversionRate > 1 ? "Emerging signals" : "Weak signals";
+    const scalabilityIndex = efficiency > 5 ? "Hypergrowth ready" : efficiency > 2 ? "Scale-ready" : "Optimize first";
+    
+    // Determine performance insights with GenAI context
+    let performanceGrade = "🔶 Pre-Product Market Fit";
+    let priorityActions = [];
+    let strategicInsights = "";
+    let aiPersonality = "";
+    
+    // Performance observations based on data patterns with platform context
+    const businessModel = account === "mms" ? "credit pack purchases" : "subscription conversions";
+    const platformType = account === "mms" ? "AI music generation mobile app" : "AI video/image creation web platform";
+    const distributionChannel = account === "mms" ? "mobile app" : "web platform";
+    
+    if (avgCTR > 3.0 && conversionRate > 3.0 && costPerPurchase < 200) {
+      performanceGrade = "🚀 High Performance Pattern";
+      strategicInsights = `Current metrics show strong engagement (CTR: ${avgCTR.toFixed(2)}%) and conversion efficiency for ${platformContext}. This pattern typically indicates good product-market alignment for ${platformType} services.`;
+    } else if (avgCTR > 2.0 && conversionRate > 2.0 && costPerPurchase < 400) {
+      performanceGrade = "🦄 Promising Metrics";
+      strategicInsights = `Data shows above-average performance across key metrics for ${platformType}. CTR and ${businessModel} rates suggest the campaign messaging resonates with users who prefer ${distributionChannel}-based AI content creation tools.`;
+    } else if (avgCTR > 1.5 && conversionRate > 1.0) {
+      performanceGrade = "⚡ Positive Trend";
+      strategicInsights = `Metrics indicate early positive signals for ${platformContext}. CTR suggests audience interest in ${platformType}, while conversion rate shows some appeal for the ${businessModel} model.`;
+    } else if (avgCTR > 1.0 || totalPurchases > 0) {
+      performanceGrade = "🎯 Initial Traction";
+      strategicInsights = `Data shows some engagement and ${businessModel} activity for ${platformType}. Performance suggests potential but may benefit from optimization targeting users interested in AI content creation.`;
+    } else {
+      performanceGrade = "🔬 Early Data";
+      strategicInsights = `Current metrics show limited conversion activity for ${platformContext}. This is common in early campaign phases for AI platforms and provides baseline data for optimization.`;
+    }
+    
+    // Observational insights based on data patterns with platform context
+    if (conversionRate < 0.5) {
+      priorityActions.push(`🆘 **Low Conversion Observed**: ${conversionRate.toFixed(2)}% conversion rate for ${businessModel} is below typical benchmarks for AI platforms. This pattern often suggests opportunities to review user journey and ${distributionChannel} experience for ${platformType} users.`);
+    } else if (conversionRate < 1.0) {
+      priorityActions.push(`🎯 **Conversion Opportunity**: ${conversionRate.toFixed(2)}% conversion rate for ${businessModel} indicates potential for improvement. User behavior analysis tools could provide insights into how users interact with ${platformType} offerings.`);
+    }
+    
+    if (costPerPurchase > 1000) {
+      priorityActions.push(`💸 **High Acquisition Cost**: ₹${Math.round(costPerPurchase).toLocaleString()} cost per ${businessModel.slice(0, -1)} is above industry averages for AI content platforms. Consider analyzing lifetime value metrics specific to ${platformType} users.`);
+    } else if (costPerPurchase > 500) {
+      priorityActions.push(`📊 **Cost Efficiency Review**: ₹${Math.round(costPerPurchase).toLocaleString()} cost per ${businessModel.slice(0, -1)} suggests reviewing targeting and campaign optimization for ${platformType} audience segments.`);
+    }
+    
+    if (avgCTR < 0.8) {
+      priorityActions.push(`🎨 **Engagement Pattern**: ${avgCTR.toFixed(2)}% CTR is below typical benchmarks for AI content platforms. Testing different creative approaches showcasing ${platformType} capabilities or ${distributionChannel}-optimized ad formats might improve engagement.`);
+    } else if (avgCTR > 3.0 && conversionRate < 2.0) {
+      priorityActions.push(`🔄 **Interest vs Conversion Gap**: High CTR (${avgCTR.toFixed(2)}%) with lower conversion suggests strong initial interest in ${platformType} but potential optimization opportunities in the ${businessModel} conversion process.`);
+    }
+    
+    if (efficiency > 0 && efficiency < 1) {
+      priorityActions.push(`⚠️ **Spend Efficiency**: Current spending of ₹${Math.round(burnRate).toLocaleString()}/day with limited ${businessModel} indicates potential for campaign optimization or strategy review for ${platformContext}.`);
+    }
+    
+    // Data-based observations and patterns with platform context
+    let recommendations = "";
+    let tacticalNext = "";
+    
+    if (totalPurchases < 3) {
+      recommendations = `With limited ${businessModel} data (${totalPurchases} conversions), qualitative insights may be more valuable than statistical analysis for ${platformType} at this stage.`;
+      tacticalNext = `Consider testing different ${distributionChannel} experience approaches highlighting ${platformType} value propositions or gathering user feedback to understand conversion barriers specific to ${distributionChannel}-based AI content creation.`;
+    } else if (efficiency > 5) {
+      recommendations = `Current efficiency metrics (${efficiency.toFixed(1)} ${businessModel} per ₹1000 spent) suggest strong campaign performance for ${platformContext}.`;
+      tacticalNext = `Data indicates potential for expanding to additional marketing channels optimized for ${distributionChannel} users while maintaining current performance levels for ${platformType} targeting.`;
+    } else if (efficiency > 2) {
+      recommendations = `Moderate efficiency levels (${efficiency.toFixed(1)} ${businessModel} per ₹1000) indicate room for optimization while maintaining current approaches for ${platformType}.`;
+      tacticalNext = `Consider implementing detailed analytics to identify highest-performing audience segments interested in ${platformType} and ${distributionChannel}-optimized creative variations showcasing AI capabilities.`;
+    } else {
+      recommendations = `Current performance metrics for ${platformContext} suggest opportunities for campaign optimization across multiple areas.`;
+      tacticalNext = `Consider systematic testing of campaign elements: targeting users interested in ${platformType}, ${distributionChannel}-optimized creative showcasing AI capabilities, and ${businessModel} conversion funnel components.`;
+    }
+    
+    return `**📊 Campaign Performance Analysis**
+
+${performanceGrade}
+
+**Key Metrics Observed:**
+• Cost per Purchase: ₹${Math.round(costPerPurchase).toLocaleString()} | Conversion Rate: ${conversionRate.toFixed(2)}% | Daily Spend: ₹${Math.round(burnRate).toLocaleString()}
+
+**Data Insights:**
+${strategicInsights}
+
+${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.slice(0, 2).join('\n') : '🎉 **Current Status**: Metrics show stable performance across key indicators.'}
+
+**Suggested Next Steps:** ${tacticalNext}`;
+  };
+
   // Show loading while checking authentication
   if (!isAuthenticated) {
     return (
@@ -151,25 +276,25 @@ export default function DailyGraphsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-[#0a0a0a] transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-800 backdrop-blur-xl border-b border-white/20 dark:border-gray-700 sticky top-0 z-50 shadow-lg shadow-purple-500/10">
+      <header className="bg-white/80 dark:bg-[#1a1a1a]/95 backdrop-blur-xl border-b border-white/20 dark:border-[#2a2a2a] shadow-lg shadow-purple-500/10 dark:shadow-black/20">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-lg">📈</span>
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-lg text-white">📈</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Daily Analytics</h1>
-                <p className="text-sm text-gray-700 dark:text-gray-200">Comprehensive performance insights</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Daily Analytics</h1>
+                <p className="text-sm text-gray-600 dark:text-[#a0a0a0]">Comprehensive performance insights</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
               <button
                 onClick={() => (window.location.href = "/")}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-purple-500/20"
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-purple-500/20 dark:shadow-blue-500/20"
               >
                 <span>← Dashboard</span>
               </button>
@@ -180,7 +305,7 @@ export default function DailyGraphsPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Analytics Filters and Controls */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-4 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-end gap-6">
             
             {/* Account Selection */}
@@ -194,7 +319,7 @@ export default function DailyGraphsPage() {
                   setSelectedAccount(e.target.value);
                   setChartData([]);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white"
               >
                 <option value="default">VideoNation</option>
                 <option value="mms">MMS</option>
@@ -212,7 +337,7 @@ export default function DailyGraphsPage() {
                   setSelectedLevel(e.target.value);
                   setChartData([]);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white"
               >
                 <option value="account">Account</option>
                 <option value="campaign">Campaign</option>
@@ -250,7 +375,7 @@ export default function DailyGraphsPage() {
                   type="date"
                   value={dailyStartDate}
                   onChange={(e) => setDailyStartDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
               <div className="flex-1">
@@ -261,34 +386,168 @@ export default function DailyGraphsPage() {
                   type="date"
                   value={dailyEndDate}
                   onChange={(e) => setDailyEndDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 flex flex-col">
+                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                  Apply
+                </label>
                 <button
                   onClick={() => {
                     handleFetchDailyData();
                     setActiveRange("custom");
                   }}
-                  className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
                 >
-                  Update
+                  Apply
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* AI Insight - Disabled */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gray-400 rounded-lg flex items-center justify-center flex-shrink-0">
+        {/* AI Insights */}
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-lg shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
               <span className="text-white text-sm">🤖</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                <span className="text-gray-500 dark:text-gray-400 font-semibold">AI Insights:</span> Currently disabled
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">AI Insights</h3>
+                <button
+                  onClick={() => {
+                    if (chartData.length > 0) {
+                      setAnalyzingData(true);
+                      // Simulate AI analysis
+                      setTimeout(() => {
+                        const insights = generateAIInsights(chartData, selectedAccount);
+                        setAnalysis(insights);
+                        setAnalyzingData(false);
+                      }, 2000);
+                    }
+                  }}
+                  disabled={chartData.length === 0 || analyzingData}
+                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-xs rounded-md font-medium transition-colors duration-200 disabled:cursor-not-allowed"
+                >
+                  {analyzingData ? "Analyzing..." : "Analyze Data"}
+                </button>
+              </div>
+              {analyzingData ? (
+                <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Analyzing campaign performance...</span>
+                </div>
+              ) : analysis ? (
+                <div className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-line">
+                  {analysis.split('\n').map((line, index) => {
+                    // Handle headers
+                    if (line.startsWith('**') && line.endsWith('**')) {
+                      const text = line.replace(/\*\*/g, '');
+                      return (
+                        <div key={index} className="font-bold text-base text-gray-900 dark:text-white mb-3 mt-4 first:mt-0">
+                          {text}
+                        </div>
+                      );
+                    }
+                    // Handle performance grade with emojis
+                    if (line.includes('🚀') || line.includes('✅') || line.includes('⚡') || line.includes('🔶')) {
+                      return (
+                        <div key={index} className="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
+                          {line}
+                        </div>
+                      );
+                    }
+                    // Handle bullet points
+                    if (line.startsWith('• ')) {
+                      const bulletText = line.substring(2);
+                      // Parse bold text for bullet points
+                      const parseTextWithBold = (text) => {
+                        const parts = text.split(/(\*\*[^*]+\*\*)/);
+                        return parts.map((part, i) => {
+                          if (part.startsWith('**') && part.endsWith('**')) {
+                            return <strong key={i} className="font-bold text-gray-900 dark:text-white">{part.replace(/\*\*/g, '')}</strong>;
+                          }
+                          return part;
+                        });
+                      };
+                      
+                      return (
+                        <div key={index} className="ml-4 mb-2 flex items-start">
+                          <span className="text-blue-500 mr-2 mt-1">•</span>
+                          <span className="text-gray-700 dark:text-gray-200">
+                            {bulletText.includes('**') ? parseTextWithBold(bulletText) : bulletText}
+                          </span>
+                        </div>
+                      );
+                    }
+                    // Handle priority action items with emojis
+                    if (line.includes('🎯') || line.includes('💸') || line.includes('📱') || line.includes('🔄') || line.includes('🆘') || line.includes('🎨') || line.includes('⚠️')) {
+                      const priority = line.includes('Critical') || line.includes('Code Red') ? 'red' : 
+                                     line.includes('High Priority') || line.includes('Crisis') ? 'orange' : 'yellow';
+                      const bgColor = priority === 'red' ? 'bg-red-50 dark:bg-red-900/30 border-red-500' : 
+                                     priority === 'orange' ? 'bg-orange-50 dark:bg-orange-900/30 border-orange-500' : 
+                                     'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-500';
+                      const textColor = priority === 'red' ? 'text-red-800 dark:text-red-200' : 
+                                       priority === 'orange' ? 'text-orange-800 dark:text-orange-200' : 
+                                       'text-yellow-800 dark:text-yellow-200';
+                      
+                      // Parse bold text within the line
+                      const parseTextWithBold = (text) => {
+                        const parts = text.split(/(\*\*[^*]+\*\*)/);
+                        return parts.map((part, i) => {
+                          if (part.startsWith('**') && part.endsWith('**')) {
+                            return <strong key={i} className="font-bold">{part.replace(/\*\*/g, '')}</strong>;
+                          }
+                          return part;
+                        });
+                      };
+                      
+                      return (
+                        <div key={index} className={`p-3 mb-3 rounded-lg border-l-4 ${bgColor}`}>
+                          <div className={`font-medium ${textColor}`}>
+                            {parseTextWithBold(line)}
+                          </div>
+                        </div>
+                      );
+                    }
+                    // Handle celebration message
+                    if (line.includes('🎉')) {
+                      return (
+                        <div key={index} className="p-3 mb-3 rounded-lg border-l-4 bg-green-50 dark:bg-green-900/30 border-green-500">
+                          <div className="font-medium text-green-800 dark:text-green-200">{line}</div>
+                        </div>
+                      );
+                    }
+                    // Regular text
+                    if (line.trim()) {
+                      // Parse bold text for any line that contains **
+                      const parseTextWithBold = (text) => {
+                        const parts = text.split(/(\*\*[^*]+\*\*)/);
+                        return parts.map((part, i) => {
+                          if (part.startsWith('**') && part.endsWith('**')) {
+                            return <strong key={i} className="font-bold text-gray-900 dark:text-white">{part.replace(/\*\*/g, '')}</strong>;
+                          }
+                          return part;
+                        });
+                      };
+                      
+                      return (
+                        <div key={index} className="mb-2 text-gray-700 dark:text-gray-200">
+                          {line.includes('**') ? parseTextWithBold(line) : line}
+                        </div>
+                      );
+                    }
+                    // Empty line for spacing
+                    return <div key={index} className="mb-2"></div>;
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Click "Analyze Data" to get AI-powered insights about your campaign performance.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -313,7 +572,7 @@ export default function DailyGraphsPage() {
         {/* Loading State */}
         {loading && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-8 shadow-2xl border border-gray-200 dark:border-[#2a2a2a]">
               <div className="flex items-center space-x-4">
                 <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 <div>

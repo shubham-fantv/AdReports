@@ -87,13 +87,13 @@ export default function VNPurchasePage() {
   const totalRevenue = purchases.reduce((sum, purchase) => sum + purchase.revenue, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-[#0a0a0a] transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-800 backdrop-blur-xl border-b border-white/20 dark:border-gray-700 sticky top-0 z-50 shadow-lg shadow-purple-500/10">
+      <header className="bg-white/80 dark:bg-[#1a1a1a]/95 backdrop-blur-xl border-b border-white/20 dark:border-[#2a2a2a] sticky top-0 z-50 shadow-lg shadow-purple-500/10 dark:shadow-black/20">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-green-500 dark:to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-lg">💰</span>
               </div>
               <div>

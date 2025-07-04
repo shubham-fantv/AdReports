@@ -12,7 +12,7 @@ export default function DataTable({
 }) {
   if (loading) {
     return (
-      <div className="mb-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl p-6">
+      <div className="mb-8 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl p-6">
         <div className="flex items-center space-x-4">
           <div className="w-8 h-8 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin"></div>
           <div>
@@ -25,8 +25,8 @@ export default function DataTable({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
+      <div className="p-6 border-b border-gray-200 dark:border-[#2a2a2a]">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Campaign Performance</h2>
@@ -43,10 +43,10 @@ export default function DataTable({
       </div>
       
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-700">
+        <table className="w-full relative">
+          <thead className="bg-gray-50 dark:bg-[#0f0f0f]">
             <tr>
-              <th className="px-3 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider w-32">Date</th>
+              <th className="sticky left-0 z-10 px-3 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider w-32 bg-gray-50 dark:bg-[#0f0f0f] border-r border-gray-200 dark:border-gray-700">Date</th>
               {selectedLevel === "campaign" && (
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Campaign</th>
               )}
@@ -77,10 +77,10 @@ export default function DataTable({
             </tr>
           </thead>
           
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-transparent">
             {tableData.map((item, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
-                <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white w-32">
+              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 group">
+                <td className="sticky left-0 z-10 px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white w-32 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700 transition-colors duration-150">
                   {item.date_start || item.date}
                 </td>
                 {selectedLevel === "campaign" && (
@@ -166,7 +166,7 @@ export default function DataTable({
               <>
                 {campaignTotals.map((campaign, idx) => (
                   <tr key={`total-${idx}`} className="bg-blue-500 dark:bg-blue-900 border-b border-blue-400 dark:border-blue-800">
-                    <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white w-32">
+                    <td className="sticky left-0 z-10 px-3 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white w-32 bg-blue-500 dark:bg-blue-900 border-r border-blue-400 dark:border-blue-800">
                       TOTAL
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white">
@@ -250,7 +250,7 @@ export default function DataTable({
             {/* Aggregate/Total Row - Only show for account level */}
             {aggregateData && selectedLevel === "account" && (
               <tr className="border-t-4 border-gray-300 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-                <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white w-32">
+                <td className="sticky left-0 z-10 px-3 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white w-32 bg-gray-50 dark:bg-gray-700 border-r border-gray-300 dark:border-gray-600">
                   TOTAL
                 </td>
                 {selectedLevel === "campaign" && (

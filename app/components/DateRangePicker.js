@@ -73,7 +73,7 @@ export default function DateRangePicker({
         <select
           value={selectedAccount}
           onChange={handleAccountChange}
-          className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          className="w-full p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
         >
           <option value="default">VideoNation</option>
           <option value="mms">MMS</option>
@@ -88,7 +88,7 @@ export default function DateRangePicker({
         <select
           value={selectedLevel}
           onChange={handleLevelChange}
-          className="w-40 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          className="w-40 p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
         >
           <option value="account">Account</option>
           <option value="campaign">Campaign</option>
@@ -144,7 +144,7 @@ export default function DateRangePicker({
             type="date"
             value={dailyStartDate}
             onChange={(e) => setDailyStartDate(e.target.value)}
-            className="w-36 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+            className="w-36 p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
           />
         </div>
         <div className="flex-shrink-0">
@@ -155,7 +155,7 @@ export default function DateRangePicker({
             type="date"
             value={dailyEndDate}
             onChange={(e) => setDailyEndDate(e.target.value)}
-            className="w-36 p-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+            className="w-36 p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
           />
         </div>
         <div className="flex-shrink-0">

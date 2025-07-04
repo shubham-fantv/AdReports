@@ -13,7 +13,7 @@ const CountrySection = ({ country, data }) => {
         {Object.entries(data).map(([key, val]) => (
           <div
             key={`${country}-${key}`}
-            className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
+            className="bg-white dark:bg-[#1a1a1a] p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] hover:shadow-lg dark:hover:border-[#3a3a3a] transition-all duration-200 group"
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -53,7 +53,7 @@ const PlatformSection = ({ platform, data }) => {
         {Object.entries(data).map(([key, val]) => (
           <div
             key={`${platform}-${key}`}
-            className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
+            className="bg-white dark:bg-[#1a1a1a] p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] hover:shadow-lg dark:hover:border-[#3a3a3a] transition-all duration-200 group"
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -98,7 +98,7 @@ const CombinedSection = ({ category, data }) => {
         {Object.entries(data).map(([key, val]) => (
           <div
             key={`${category}-${key}`}
-            className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
+            className="bg-white dark:bg-[#1a1a1a] p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] hover:shadow-lg dark:hover:border-[#3a3a3a] transition-all duration-200 group"
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -137,7 +137,7 @@ const CompleteOverallSection = ({ data }) => {
         {Object.entries(data).map(([key, val]) => (
           <div
             key={`complete-${key}`}
-            className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
+            className="bg-white dark:bg-[#1a1a1a] p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] hover:shadow-lg dark:hover:border-[#3a3a3a] transition-all duration-200 group"
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">

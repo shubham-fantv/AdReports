@@ -30,41 +30,41 @@ export default function LoginForm({ onLoginSuccess }) {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <div className="bg-white/90 dark:bg-gray-800 rounded-3xl shadow-2xl border border-white/30 dark:border-gray-700 overflow-hidden backdrop-blur-xl">
+    <div className="w-full max-w-sm mx-auto">
+      <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-600">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-6 text-center shadow-lg">
-          <h1 className="text-2xl font-bold text-white mb-2">Ad Reports Dashboard</h1>
-          <p className="text-purple-100 text-sm">Welcome back! Please sign in to continue.</p>
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:bg-gradient-to-r dark:from-[#1a1a1a] dark:to-[#1a1a1a] px-6 py-6 text-center border-b border-transparent dark:border-[#2a2a2a]">
+          <h2 className="text-2xl font-bold text-white dark:text-white">Ad Reports Dashboard</h2>
+          <p className="text-blue-100 dark:text-[#a0a0a0] text-sm mt-1">Welcome back! Please sign in to continue.</p>
         </div>
 
         {/* Form */}
-        <div className="px-8 py-8">
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <div className="px-6 py-6 bg-white dark:bg-gray-800">
+          <form onSubmit={handleLogin}>
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">
                 Username
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+                className="block w-full p-3 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 placeholder="Enter your username"
                 required
                 disabled={loggingIn}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">
                 Password
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+                className="block w-full p-3 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 placeholder="Enter your password"
                 required
                 disabled={loggingIn}
@@ -72,7 +72,7 @@ export default function LoginForm({ onLoginSuccess }) {
             </div>
 
             {loginError && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm mb-6">
                 {loginError}
               </div>
             )}
@@ -80,7 +80,7 @@ export default function LoginForm({ onLoginSuccess }) {
             <button
               type="submit"
               disabled={loggingIn}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transform hover:-translate-y-0.5"
+              className="w-full py-3 px-4 rounded-lg font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-teal-600 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-blue-500 dark:focus:ring-teal-500 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loggingIn ? "Signing In..." : "Sign In"}
             </button>
@@ -88,8 +88,8 @@ export default function LoginForm({ onLoginSuccess }) {
         </div>
 
         {/* Footer */}
-        <div className="bg-white/50 dark:bg-gray-900 px-8 py-4 border-t border-white/20 dark:border-gray-700 backdrop-blur-sm">
-          <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900">
+          <p className="text-xs text-center text-gray-600 dark:text-gray-500">
             Secure access to your advertising analytics dashboard
           </p>
         </div>

@@ -330,6 +330,32 @@ body {
   background: rgba(255, 255, 255, 0.8) !important;
 }
 
+/* Dark theme backdrop blur for headers */
+.dark .backdrop-blur-xl {
+  backdrop-filter: blur(24px) !important;
+  background: rgba(26, 26, 26, 0.95) !important;
+}
+
+/* Fix date picker icons in dark theme */
+.dark input[type="date"] {
+  color-scheme: dark !important;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) !important;
+  opacity: 1 !important;
+}
+
+/* Remove table row dividers in dark theme */
+.dark table tbody tr {
+  border-bottom: none !important;
+}
+
+.dark .divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-top: none !important;
+  border-bottom: none !important;
+}
+
 /* Base styles */
 @layer base {
   * {
