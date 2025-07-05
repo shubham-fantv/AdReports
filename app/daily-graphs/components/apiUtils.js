@@ -16,55 +16,104 @@ export const fetchDailyData = async (
   setLoading(true);
 
   try {
-    // Fetch daily breakdown data for charts
-    const params = new URLSearchParams({
-      start_date: dailyStartDate,
-      end_date: dailyEndDate,
-      per_day: "true",
-      account: selectedAccount,
-      level: selectedLevel
-    });
-    
-    // Add country breakdown for MMS account level when specific country is selected
-    if (selectedAccount === "mms" && selectedLevel === "account" && selectedCountry !== "all") {
-      params.append("breakdowns", "country");
-      console.log(`🌍 Adding country breakdown for MMS account level`);
-    }
-    
-    console.log(`🔗 Daily API URL: /api/daily-reports?${params.toString()}`);
-    const response = await fetch(`/api/daily-reports?${params}`);
-    const result = await response.json();
+    let allCampaigns = [];
 
-    const allCampaigns = [];
-    if (result?.data?.campaigns) {
-      allCampaigns.push(...result.data.campaigns);
+    // Special handling for MMS account level with specific country (india/us)
+    if (selectedAccount === "mms" && selectedLevel === "account" && (selectedCountry === "india" || selectedCountry === "us")) {
+      console.log(`🌍 Special MMS country handling for: ${selectedCountry}`);
+      
+      // Create date array for individual day calls
+      const startDate = new Date(dailyStartDate);
+      const endDate = new Date(dailyEndDate);
+      const dateArray = [];
+      
+      for (let dt = new Date(startDate); dt <= endDate; dt.setDate(dt.getDate() + 1)) {
+        dateArray.push(new Date(dt).toISOString().split('T')[0]);
+      }
+      
+      console.log(`🗓️ Making individual calls for dates:`, dateArray);
+      
+      // Make individual API calls for each day with per_day=false and country breakdown
+      const dailyPromises = dateArray.map(date => {
+        const dayParams = new URLSearchParams({
+          start_date: date,
+          end_date: date,
+          per_day: "false",
+          account: selectedAccount,
+          level: selectedLevel,
+          fields: "spend,impressions,clicks,ctr,cpm,cpc,frequency,actions",
+          breakdowns: "country"
+        });
+        
+        console.log(`🔗 Daily country API call for ${date}: /api/daily-reports?${dayParams.toString()}`);
+        return fetch(`/api/daily-reports?${dayParams}`).then(res => res.json());
+      });
+      
+      const dailyResults = await Promise.all(dailyPromises);
+      
+      // Process results and add date_start to each item
+      dailyResults.forEach((result, index) => {
+        if (result?.data?.campaigns) {
+          const dateForData = dateArray[index];
+          result.data.campaigns.forEach(campaign => {
+            // Add date_start field for chart compatibility
+            campaign.date_start = dateForData;
+            campaign.date = dateForData;
+          });
+          allCampaigns.push(...result.data.campaigns);
+        }
+      });
+      
+      console.log("📊 MMS Country Daily Graph data (individual day calls):", allCampaigns);
+      
+    } else {
+      // Default handling for all other cases (including MMS "all countries")
+      const params = new URLSearchParams({
+        start_date: dailyStartDate,
+        end_date: dailyEndDate,
+        per_day: "true",
+        account: selectedAccount,
+        level: selectedLevel
+      });
+      
+      console.log(`🔗 Standard Daily API URL: /api/daily-reports?${params.toString()}`);
+      const response = await fetch(`/api/daily-reports?${params}`);
+      const result = await response.json();
+
+      if (result?.data?.campaigns) {
+        allCampaigns.push(...result.data.campaigns);
+      }
+      
+      console.log("📊 Standard Daily Graph data (per_day: true):", allCampaigns);
     }
     
-    console.log("📊 Daily Graph data (per_day: true):", allCampaigns);
+    // Fetch aggregate data for overview cards
+    let aggregateResult = { data: { campaigns: [] } };
     
-    // ALSO fetch aggregate data for overview cards (same as home page)
-    const aggregateParams = new URLSearchParams({
-      start_date: dailyStartDate,
-      end_date: dailyEndDate,
-      per_day: "false",
-      account: selectedAccount,
-      level: selectedLevel,
-      fields: selectedLevel === "campaign" 
-        ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
-        : "spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
-    });
-    
-    // Add country breakdown for MMS account level aggregate data too
-    if (selectedAccount === "mms" && selectedLevel === "account" && selectedCountry !== "all") {
-      aggregateParams.append("breakdowns", "country");
-      console.log(`🌍 Adding country breakdown to aggregate for MMS account level`);
+    // For MMS account level with specific country (india/us), use the individual day data as aggregate
+    if (selectedAccount === "mms" && selectedLevel === "account" && (selectedCountry === "india" || selectedCountry === "us")) {
+      console.log(`🌍 Using daily data as aggregate for MMS ${selectedCountry}`);
+      // The allCampaigns already contains the country-filtered data from individual day calls
+      aggregateResult = { data: { campaigns: allCampaigns } };
+    } else {
+      // Standard aggregate data fetch for all other cases
+      const aggregateParams = new URLSearchParams({
+        start_date: dailyStartDate,
+        end_date: dailyEndDate,
+        per_day: "false",
+        account: selectedAccount,
+        level: selectedLevel,
+        fields: selectedLevel === "campaign" 
+          ? "campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
+          : "spend,impressions,clicks,ctr,cpm,cpc,frequency,actions"
+      });
+      
+      console.log(`🔗 Standard Aggregate API URL: /api/daily-reports?${aggregateParams.toString()}`);
+      const aggregateResponse = await fetch(`/api/daily-reports?${aggregateParams}`);
+      aggregateResult = await aggregateResponse.json();
     }
     
-    console.log(`🔗 Aggregate API URL: /api/daily-reports?${aggregateParams.toString()}`);
-    const aggregateResponse = await fetch(`/api/daily-reports?${aggregateParams}`);
-    const aggregateResult = await aggregateResponse.json();
-    
-    console.log("🔢 Aggregate data (per_day: false):", aggregateResult);
+    console.log("🔢 Aggregate data:", aggregateResult);
     
     // Use aggregate data for overview cards if available, otherwise fall back to daily data
     let dataForOverviewCards = allCampaigns;
