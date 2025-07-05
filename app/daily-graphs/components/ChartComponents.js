@@ -10,19 +10,19 @@ export const AgeSpendPieChart = ({ ageData, generateAgeSpendPieChartData, theme 
   if (!ageSpendPieData) return null;
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 chart-container chart-card">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spend Distribution by Age Groups</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Pie chart showing advertising spend allocation across different age demographics</p>
         </div>
-        <div className="text-xs text-gray-600 dark:text-gray-400">
+        <div className="text-xs text-gray-600 dark:text-gray-400 shrink-0">
           Total Age Groups: {ageSpendPieData.labels.length}
         </div>
       </div>
       
-      <div className="flex flex-col lg:flex-row items-center gap-8">
-        <div className="w-full lg:w-1/2 h-80">
+      <div className="flex flex-col lg:flex-row items-center gap-4 lg:gap-8">
+        <div className="w-full lg:w-1/2 h-64 sm:h-80">
           <Pie
             data={ageSpendPieData}
             options={{
@@ -405,7 +405,7 @@ export const SideBySideCharts = ({
   if (!scatterData || !clicksVsCtrData) return null;
   
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
       
       {/* Spend vs Purchase Scatter Plot */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
@@ -512,9 +512,9 @@ export const IndividualMetricsGrid = ({
   }
 
   return (
-    <div className="space-y-8 mb-8">
+    <div className="space-y-6 sm:space-y-8 mb-6 sm:mb-8">
       {metricRows.map((row, rowIndex) => (
-        <div key={rowIndex} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div key={rowIndex} className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {row.map(metric => {
             const chartData_individual = generateIndividualMetricChart(chartData, metric.key, getActionValue);
             if (!chartData_individual) return null;
@@ -673,7 +673,7 @@ export const DeviceBreakdownTable = ({ deviceData, getActionValue, theme }) => {
   const averageCostPerPurchase = totalPurchases > 0 ? Math.round(totalSpend / totalPurchases) : 0;
 
   return (
-    <div className="w-1/2">
+    <div className="w-full lg:w-1/2">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 chart-container chart-card">
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
@@ -686,7 +686,7 @@ export const DeviceBreakdownTable = ({ deviceData, getActionValue, theme }) => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
                 <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Device Platform</th>

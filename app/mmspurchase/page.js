@@ -3,27 +3,45 @@ import { useState, useEffect } from 'react';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../contexts/ThemeContext';
 
-export default function VNPurchasePage() {
+const PRICING_PLANS = {
+  US: {
+    plan1: { name: "Basic", price: 9.99 },
+    plan2: { name: "Standard", price: 19.99 },
+    plan3: { name: "Premium", price: 29.99 }
+  },
+  India: {
+    plan1: { name: "Basic", price: 299 },
+    plan2: { name: "Standard", price: 599 },
+    plan3: { name: "Premium", price: 899 }
+  }
+};
+
+let MMS_PURCHASES_DATA = [
+  {
+    id: 1735862400000,
+    date: "2025-01-02",
+    country: "US",
+    revenue: 1250.00,
+    createdAt: "2025-01-02T10:00:00.000Z"
+  },
+  {
+    id: 1735776000000,
+    date: "2025-01-01",
+    country: "India",
+    revenue: 25000,
+    createdAt: "2025-01-01T10:00:00.000Z"
+  }
+];
+
+export default function MMSPurchasePage() {
   const { theme } = useTheme();
   const [formData, setFormData] = useState({
     date: '',
+    country: '',
     revenue: ''
   });
-  const [purchases, setPurchases] = useState([]);
+  const [purchases, setPurchases] = useState(MMS_PURCHASES_DATA);
   const [errors, setErrors] = useState({});
-
-  // Load data from localStorage on component mount
-  useEffect(() => {
-    const savedPurchases = localStorage.getItem('vnPurchases');
-    if (savedPurchases) {
-      setPurchases(JSON.parse(savedPurchases));
-    }
-  }, []);
-
-  // Save to localStorage whenever purchases change
-  useEffect(() => {
-    localStorage.setItem('vnPurchases', JSON.stringify(purchases));
-  }, [purchases]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -47,6 +65,10 @@ export default function VNPurchasePage() {
       newErrors.date = 'Date is required';
     }
     
+    if (!formData.country) {
+      newErrors.country = 'Country is required';
+    }
+    
     if (!formData.revenue) {
       newErrors.revenue = 'Revenue is required';
     } else if (isNaN(formData.revenue) || parseFloat(formData.revenue) < 0) {
@@ -67,21 +89,27 @@ export default function VNPurchasePage() {
     const newPurchase = {
       id: Date.now(),
       date: formData.date,
+      country: formData.country,
       revenue: parseFloat(formData.revenue),
       createdAt: new Date().toISOString()
     };
 
-    setPurchases(prev => [...prev, newPurchase]);
+    // Add to global data array
+    MMS_PURCHASES_DATA.push(newPurchase);
+    setPurchases([...MMS_PURCHASES_DATA]);
     
     // Reset form
     setFormData({
       date: '',
+      country: '',
       revenue: ''
     });
   };
 
   const handleDelete = (id) => {
-    setPurchases(prev => prev.filter(purchase => purchase.id !== id));
+    // Remove from global data array
+    MMS_PURCHASES_DATA = MMS_PURCHASES_DATA.filter(purchase => purchase.id !== id);
+    setPurchases([...MMS_PURCHASES_DATA]);
   };
 
   const totalRevenue = purchases.reduce((sum, purchase) => sum + purchase.revenue, 0);
@@ -94,10 +122,10 @@ export default function VNPurchasePage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-green-500 dark:to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-base sm:text-lg">💰</span>
+                <span className="text-base sm:text-lg">📱</span>
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">VideoNation Purchase Tracker</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">MMS Purchase Tracker</h1>
                 <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 hidden sm:block">Manage daily revenue entries</p>
               </div>
             </div>
@@ -150,6 +178,31 @@ export default function VNPurchasePage() {
                 />
                 {errors.date && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date}</p>
+                )}
+              </div>
+
+              {/* Country Field */}
+              <div>
+                <label htmlFor="country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Country
+                </label>
+                <select
+                  id="country"
+                  name="country"
+                  value={formData.country}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-3 sm:px-4 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-200 text-sm sm:text-base min-h-[44px] ${
+                    errors.country 
+                      ? 'border-red-500 dark:border-red-400' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                >
+                  <option value="">Select Country</option>
+                  <option value="US">United States</option>
+                  <option value="India">India</option>
+                </select>
+                {errors.country && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.country}</p>
                 )}
               </div>
 
@@ -211,10 +264,11 @@ export default function VNPurchasePage() {
             ) : (
               <>
                 <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
-                  <table className="w-full min-w-[500px]">
+                  <table className="w-full min-w-[600px]">
                     <thead>
                       <tr className="border-b border-gray-200 dark:border-gray-700">
                         <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 dark:text-white text-sm sm:text-base">Date</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 dark:text-white text-sm sm:text-base">Country</th>
                         <th className="text-right py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 dark:text-white text-sm sm:text-base">Revenue (₹)</th>
                         <th className="text-center py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 dark:text-white text-sm sm:text-base">Actions</th>
                       </tr>
@@ -234,6 +288,11 @@ export default function VNPurchasePage() {
                                 month: 'short',
                                 day: 'numeric'
                               })}
+                            </span>
+                          </td>
+                          <td className="py-3 sm:py-4 px-2 sm:px-4">
+                            <span className="font-medium text-gray-900 dark:text-white text-sm sm:text-base">
+                              {purchase.country}
                             </span>
                           </td>
                           <td className="py-3 sm:py-4 px-2 sm:px-4 text-right">
@@ -257,6 +316,7 @@ export default function VNPurchasePage() {
                         <td className="py-3 sm:py-4 px-2 sm:px-4">
                           <span className="font-bold text-gray-900 dark:text-white text-sm sm:text-base">Total</span>
                         </td>
+                        <td className="py-3 sm:py-4 px-2 sm:px-4"></td>
                         <td className="py-3 sm:py-4 px-2 sm:px-4 text-right">
                           <span className="font-bold text-gray-900 dark:text-white text-base sm:text-lg">
                             ₹{totalRevenue.toLocaleString()}

@@ -26,15 +26,15 @@ export default function DataTable({
 
   return (
     <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
-      <div className="p-6 border-b border-gray-200 dark:border-[#2a2a2a]">
+      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-[#2a2a2a]">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Campaign Performance</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Campaign Performance</h2>
             <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">Detailed analytics and metrics</p>
           </div>
           <button
             onClick={onExportCSV}
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm sm:text-base"
           >
             <span>📈</span>
             <span>Export CSV</span>
@@ -42,8 +42,8 @@ export default function DataTable({
         </div>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="w-full relative">
+      <div className="overflow-x-auto scrollbar-thin">
+        <table className="w-full relative min-w-[800px]">
           <thead className="bg-gray-50 dark:bg-[#0f0f0f]">
             <tr>
               <th className="sticky left-0 z-10 px-3 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider w-32 bg-gray-50 dark:bg-[#0f0f0f] border-r border-gray-200 dark:border-gray-700">Date</th>

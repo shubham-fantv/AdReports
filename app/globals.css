@@ -426,3 +426,38 @@ body {
   }
 }
 
+/* Mobile-specific optimizations */
+@media (max-width: 640px) {
+  /* Reduce chart padding on mobile */
+  .chart-container {
+    padding: 1rem !important;
+  }
+  
+  /* Make tables more touch-friendly */
+  table th,
+  table td {
+    padding: 0.75rem 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Reduce sticky column width on mobile */
+  .sticky {
+    min-width: 80px !important;
+  }
+  
+  /* Better mobile typography */
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.25rem !important; }
+  h3 { font-size: 1.125rem !important; }
+  
+  /* Improve button sizing on mobile */
+  button {
+    min-height: 44px !important;
+  }
+  
+  /* Better card spacing */
+  .card-grid {
+    gap: 1rem !important;
+  }
+}
+

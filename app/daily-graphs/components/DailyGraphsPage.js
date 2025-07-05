@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Line, Bar } from "react-chartjs-2";
 import { format, subDays } from 'date-fns';
 import ThemeToggle from '../../components/ThemeToggle';
+import { useMobileMenu } from '../../contexts/MobileMenuContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
   Chart as ChartJS,
@@ -92,6 +93,7 @@ export default function DailyGraphsPage() {
   const [selectedLevel, setSelectedLevel] = useState("account");
   const [selectedCountry, setSelectedCountry] = useState("all");
   const [selectedGraphLevel, setSelectedGraphLevel] = useState("normal");
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useMobileMenu();
 
   // Initialize default date range to L7 (last 7 days)
   useEffect(() => {
@@ -390,32 +392,105 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-[#0a0a0a] transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-[#1a1a1a]/95 backdrop-blur-xl border-b border-white/20 dark:border-[#2a2a2a] shadow-lg shadow-purple-500/10 dark:shadow-black/20">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-lg text-white">📈</span>
+      <header className="bg-white/80 dark:bg-[#1a1a1a]/95 backdrop-blur-xl border-b border-white/20 dark:border-[#2a2a2a] shadow-lg shadow-purple-500/10 dark:shadow-black/20 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            {/* Left: Logo and Title */}
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-base sm:text-lg">📈</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Daily Analytics</h1>
-                <p className="text-sm text-gray-600 dark:text-[#a0a0a0]">Comprehensive performance insights</p>
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Daily Analytics</h1>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-[#a0a0a0] hidden sm:block">Comprehensive performance insights</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
+
+            {/* Right: Navigation and Actions */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* Mobile Sidebar Toggle */}
               <button
-                onClick={() => (window.location.href = "/")}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-purple-500/20 dark:shadow-blue-500/20"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 sm:hidden"
+                aria-label="Open sidebar"
               >
-                <span>← Dashboard</span>
+                <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
               </button>
+
+              {/* Desktop Navigation */}
+              <nav className="hidden sm:flex items-center space-x-2">
+                <button
+                  onClick={() => (window.location.href = "/")}
+                  className="px-3 lg:px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-purple-500/20 dark:shadow-blue-500/20 text-sm lg:text-base"
+                >
+                  <span>←</span>
+                  <span>Dashboard</span>
+                </button>
+              </nav>
+
+              {/* Theme Toggle */}
+              <ThemeToggle />
             </div>
           </div>
         </div>
+
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      {/* Mobile Sidebar */}
+      <div className={`fixed inset-0 z-50 sm:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
+        {/* Overlay */}
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+        
+        {/* Sidebar */}
+        <div className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Navigation</h2>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            >
+              <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Sidebar Content */}
+          <div className="p-4 space-y-4">
+            {/* Dashboard Link */}
+            <button
+              onClick={() => {
+                window.location.href = "/";
+                setIsMobileMenuOpen(false);
+              }}
+              className="flex items-center w-full px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+            >
+              <span className="mr-3 text-lg">🏠</span>
+              <span className="font-medium">Dashboard</span>
+            </button>
+
+            {/* Graphs Overview Link */}
+            <button
+              onClick={() => {
+                document.getElementById('performance-section')?.scrollIntoView({ behavior: 'smooth' });
+                setIsMobileMenuOpen(false);
+              }}
+              className="flex items-center w-full px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+            >
+              <span className="mr-3 text-lg">📊</span>
+              <span className="font-medium">Graphs</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Analytics Filters and Controls */}
         <div className="bg-white dark:bg-[#1a1a1a] rounded-xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-4 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-end gap-6">
@@ -523,56 +598,55 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             </div>
 
             {/* Date Range Picker */}
-            <div className="flex gap-4 flex-1">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={dailyStartDate}
-                  onChange={(e) => setDailyStartDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
-                  End Date
-                </label>
-                <input
-                  type="date"
-                  value={dailyEndDate}
-                  onChange={(e) => setDailyEndDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
-                />
-              </div>
-              <div className="flex-shrink-0 flex flex-col">
-                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
-                  Apply
-                </label>
-                <button
-                  onClick={() => {
-                    handleFetchDailyData();
-                    setActiveRange("custom");
-                  }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
-                >
-                  Apply
-                </button>
+            <div className="flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                <div className="flex-shrink-0">
+                  <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={dailyStartDate}
+                    onChange={(e) => setDailyStartDate(e.target.value)}
+                    className="w-full sm:w-36 px-2 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] text-sm"
+                  />
+                </div>
+                <div className="flex-shrink-0">
+                  <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={dailyEndDate}
+                    onChange={(e) => setDailyEndDate(e.target.value)}
+                    className="w-full sm:w-36 px-2 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] text-sm"
+                  />
+                </div>
+                <div className="flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      handleFetchDailyData();
+                      setActiveRange("custom");
+                    }}
+                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm"
+                  >
+                    Apply
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* AI Insights */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-lg shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-4 mb-6">
-          <div className="flex items-start gap-3">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-lg shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-3 sm:p-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-start gap-3">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
               <span className="text-white text-sm">🤖</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">AI Insights</h3>
+            <div className="flex-1 min-w-0 w-full">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">AI Insights</h3>
                 <button
                   onClick={() => {
                     if (chartData.length > 0) {
@@ -586,7 +660,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
                     }
                   }}
                   disabled={chartData.length === 0 || analyzingData}
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-xs rounded-md font-medium transition-colors duration-200 disabled:cursor-not-allowed"
+                  className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-xs sm:text-sm rounded-md font-medium transition-colors duration-200 disabled:cursor-not-allowed w-full sm:w-auto min-h-[44px] sm:min-h-[auto]"
                 >
                   {analyzingData ? "Analyzing..." : "Analyze Data"}
                 </button>
@@ -711,15 +785,18 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
 
         {/* VideoNation Cards - Only show for default account and account level */}
         {selectedAccount === "default" && selectedLevel === "account" && chartData.length > 0 && (
-          <VideoNationPerformanceCards 
-            chartData={chartData} 
-            calculateSummaryMetrics={wrappedCalculateSummaryMetrics}
-          />
+          <div id="performance-section">
+            <VideoNationPerformanceCards 
+              chartData={chartData} 
+              calculateSummaryMetrics={wrappedCalculateSummaryMetrics}
+            />
+          </div>
         )}
 
         {/* MMS Cards - Show for MMS account at both account and campaign level */}
         {selectedAccount === "mms" && chartData.length > 0 && (
-          <MmsPerformanceCards 
+          <div id="performance-section">
+            <MmsPerformanceCards 
             key={`mms-cards-${selectedLevel === "campaign" ? selectedGraphLevel : selectedCountry}-${chartData.length}`}
             chartData={chartData} 
             calculateMmsMetrics={wrappedCalculateMmsMetrics}
@@ -727,6 +804,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             selectedGraphLevel={selectedGraphLevel}
             selectedLevel={selectedLevel}
           />
+          </div>
         )}
 
 
@@ -748,7 +826,8 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
 
         {/* Individual Metrics Grid - Show for account level only */}
         {selectedLevel === "account" && chartData.length > 0 && (
-          <IndividualMetricsGrid 
+          <div id="individual-metrics">
+            <IndividualMetricsGrid 
             chartData={chartData} 
             generateIndividualMetricChart={generateIndividualMetricChart}
             getActionValue={getActionValue}
@@ -756,11 +835,12 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             theme={theme}
             accountType={selectedAccount}
           />
+          </div>
         )}
 
         {/* Device Breakdown Table - Only show for VideoNation account and account level */}
         {selectedAccount === "default" && selectedLevel === "account" && deviceData.length > 0 && (
-          <div className="mb-8">
+          <div id="device-breakdown" className="mb-8">
             <DeviceBreakdownTable 
               deviceData={deviceData} 
               getActionValue={getActionValue}
@@ -781,7 +861,8 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
 
         {/* Side-by-Side Charts - Only show for MMS account and account level */}
         {selectedAccount === "mms" && selectedLevel === "account" && chartData.length > 0 && (
-          <SideBySideCharts 
+          <div id="correlations">
+            <SideBySideCharts 
             chartData={chartData} 
             generateSpendVsPurchaseScatterData={wrappedGenerateSpendVsPurchaseScatterData}
             generateClicksVsCtrChartData={wrappedGenerateClicksVsCtrChartData}
@@ -789,11 +870,12 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             getBarWithLineChartOptions={getBarWithLineChartOptions}
             theme={theme}
           />
+          </div>
         )}
 
         {/* Audience Breakdown - Only show for MMS account and account level, skip if country filter is applied */}
         {selectedAccount === "mms" && selectedLevel === "account" && selectedCountry === "all" && (ageData.length > 0 || genderData.length > 0) && (
-          <div className="mb-8">
+          <div id="age-analytics" className="mb-8">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
@@ -826,7 +908,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
 
               {/* Gender Charts Side by Side */}
               {genderData.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div id="gender-analytics" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Gender Spend Distribution Pie Chart */}
                   <GenderSpendPieChart 
                     genderData={genderData} 
@@ -1013,10 +1095,12 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             {((selectedAccount === "mms" && selectedLevel === "campaign" && selectedCountry === "all") || 
               (selectedAccount === "default" && selectedLevel === "campaign")) && 
               deviceData.length > 0 && (
-              <PlacementBreakdownChart 
+              <div id="placement-analytics">
+                <PlacementBreakdownChart 
                 placementData={deviceData} 
                 theme={theme}
               />
+              </div>
             )}
           </div>
         )}

@@ -17,6 +17,9 @@ export const metadata = {
   description: "Advanced advertising campaign analytics and reporting platform",
 };
 
+import { MobileMenuProvider } from "./contexts/MobileMenuContext";
+import MobileMenuOverlay from "./components/MobileMenuOverlay";
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
@@ -42,7 +45,10 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          {children}
+          <MobileMenuProvider>
+            <MobileMenuOverlay />
+            {children}
+          </MobileMenuProvider>
         </ThemeProvider>
       </body>
     </html>

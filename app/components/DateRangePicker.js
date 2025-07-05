@@ -66,16 +66,16 @@ export default function DateRangePicker({
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-6 mb-8">
+    <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-wrap sm:items-end sm:gap-6 mb-6 sm:mb-8">
       {/* Account Selection */}
-      <div>
+      <div className="sm:flex-shrink-0">
         <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
           Account
         </label>
         <select
           value={selectedAccount}
           onChange={handleAccountChange}
-          className="w-full p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
+          className="w-full sm:w-auto p-3 sm:p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-sm sm:text-base min-h-[44px] sm:min-h-[auto]"
         >
           <option value="default">VideoNation</option>
           <option value="mms">MMS</option>
@@ -83,14 +83,14 @@ export default function DateRangePicker({
       </div>
 
       {/* Level Selection */}
-      <div>
+      <div className="sm:flex-shrink-0">
         <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
           Level
         </label>
         <select
           value={selectedLevel}
           onChange={handleLevelChange}
-          className="w-40 p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
+          className="w-full sm:w-40 p-3 sm:p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-sm sm:text-base min-h-[44px] sm:min-h-[auto]"
         >
           <option value="account">Account</option>
           <option value="campaign">Campaign</option>
@@ -98,7 +98,7 @@ export default function DateRangePicker({
       </div>
 
       {/* Quick Date Range Buttons */}
-      <div>
+      <div className="sm:flex-shrink-0">
         <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
           Quick Ranges
         </label>
@@ -113,7 +113,7 @@ export default function DateRangePicker({
             <button
               key={range.key}
               onClick={() => handleQuickDateRange(range.days, range.key)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[44px] sm:min-h-[auto] flex-shrink-0 ${
                 activeDailyRange === range.key
                   ? "bg-blue-600 text-white shadow-md"
                   : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -126,8 +126,8 @@ export default function DateRangePicker({
       </div>
 
       {/* Custom Date Range */}
-      <div className="flex items-end gap-3 flex-nowrap">
-        <div className="flex-shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-end lg:gap-3 gap-4 lg:flex-nowrap">
+        <div className="lg:flex-shrink-0">
           <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
             Start Date
           </label>
@@ -135,10 +135,10 @@ export default function DateRangePicker({
             type="date"
             value={dailyStartDate}
             onChange={(e) => setDailyStartDate(e.target.value)}
-            className="w-36 p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+            className="w-full lg:w-36 p-3 sm:p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] text-sm sm:text-base min-h-[44px] sm:min-h-[auto]"
           />
         </div>
-        <div className="flex-shrink-0">
+        <div className="lg:flex-shrink-0">
           <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
             End Date
           </label>
@@ -146,13 +146,16 @@ export default function DateRangePicker({
             type="date"
             value={dailyEndDate}
             onChange={(e) => setDailyEndDate(e.target.value)}
-            className="w-36 p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+            className="w-full lg:w-36 p-3 sm:p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] text-sm sm:text-base min-h-[44px] sm:min-h-[auto]"
           />
         </div>
-        <div className="flex-shrink-0">
+        <div className="col-span-1 sm:col-span-2 lg:col-span-1 lg:flex-shrink-0">
+          <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2 lg:opacity-0">
+            Apply
+          </label>
           <button
             onClick={handleApplyClick}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+            className="w-full lg:w-auto px-4 py-3 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base min-h-[44px] sm:min-h-[auto]"
           >
             Apply
           </button>

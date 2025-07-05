@@ -33,17 +33,17 @@ export default function AdsTable({ adsData, selectedAccount }) {
   if (adsData.length === 0) {
     return (
       <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-[#2a2a2a]">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-[#2a2a2a]">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center">
             <span className="mr-2">📢</span>
             Ads Data (0 ads)
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
             Ad-level performance data for {selectedAccount === "default" ? "VideoNation" : "MMS"}
           </p>
         </div>
         
-        <div className="px-6 py-12 text-center">
+        <div className="px-4 sm:px-6 py-8 sm:py-12 text-center">
           <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">📢</span>
           </div>
@@ -56,22 +56,22 @@ export default function AdsTable({ adsData, selectedAccount }) {
 
   return (
     <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-[#2a2a2a]">
-        <div className="flex items-center justify-between">
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-[#2a2a2a]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center">
               <span className="mr-2">📢</span>
               Ads Data ({adsData.length} ads)
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
               Ad-level performance data for {selectedAccount === "default" ? "VideoNation" : "MMS"}
             </p>
           </div>
           
           {/* Column Visibility Filter */}
           <div className="relative">
-            <div className="flex items-center space-x-2 flex-wrap">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Show/Hide:</span>
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-wrap text-xs sm:text-sm">
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hidden sm:inline">Show/Hide:</span>
               
               {/* Select All checkbox */}
               <label className="flex items-center space-x-2 px-3 py-1 rounded-lg bg-gray-50 dark:bg-gray-800 cursor-pointer">
@@ -164,28 +164,28 @@ export default function AdsTable({ adsData, selectedAccount }) {
         </div>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+        <table className="w-full min-w-[1200px]">
           <thead className="bg-gray-50 dark:bg-[#2a2a2a]">
             <tr>
               {!hiddenColumns.ad_id && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Ad ID
                 </th>
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" style={{width: '256px', minWidth: '256px'}}>
+              <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" style={{width: '256px', minWidth: '256px'}}>
                 Ad Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Impressions
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Clicks
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Spend
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 CTR (%)
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">

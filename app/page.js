@@ -9,6 +9,7 @@ import LoginForm from './components/LoginForm';
 import DateRangePicker from './components/DateRangePicker';
 import DataTable from './components/DataTable';
 import OverviewCards from './components/OverviewCards';
+import { useMobileMenu } from './contexts/MobileMenuContext';
 
 export default function Home() {
   // Authentication state
@@ -45,8 +46,13 @@ export default function Home() {
   const [selectedCountry, setSelectedCountry] = useState("india");
   const [selectedPlatforms, setSelectedPlatforms] = useState(["all"]);
 
+  // Mobile menu state from context
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useMobileMenu();
+  const [mounted, setMounted] = useState(false);
+
   // Check for existing authentication on page load
   useEffect(() => {
+    setMounted(true);
     const authStatus = localStorage.getItem("isAuthenticated");
     if (authStatus === "true") {
       setIsAuthenticated(true);
@@ -333,42 +339,117 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-[#0a0a0a] transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-[#1a1a1a]/95 backdrop-blur-xl border-b border-white/20 dark:border-[#2a2a2a] shadow-lg shadow-purple-500/10 dark:shadow-black/20">
+      <header className="bg-white/80 dark:bg-[#1a1a1a]/95 backdrop-blur-xl border-b border-white/20 dark:border-[#2a2a2a] shadow-lg shadow-purple-500/10 dark:shadow-black/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">📈</span>
+            {/* Left: Logo and Title */}
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-base sm:text-lg">📈</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white dark:bg-red-500	">Ad Reports Dashboard</h1>
-                <p className="text-sm text-gray-600 dark:text-[#a0a0a0]">Analytics and Performance Insights</p>
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Ad Reports Dashboard</h1>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-[#a0a0a0] hidden sm:block">Analytics and Performance Insights</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <nav className="flex items-center space-x-2">
+
+            {/* Right: Navigation and Actions */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* Mobile Hamburger Menu */}
+              <div className="relative sm:hidden">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+                  aria-label="Open sidebar"
+                >
+                  <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Desktop Navigation */}
+              <nav className="hidden sm:flex items-center space-x-2">
                 <a
                   href="/daily-graphs"
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 hover:from-purple-700 hover:to-pink-700 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-purple-500/20 dark:shadow-blue-500/20"
+                  className="px-3 lg:px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 hover:from-purple-700 hover:to-pink-700 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-purple-500/20 dark:shadow-blue-500/20 text-sm lg:text-base"
                 >
                   <span>📊</span>
                   <span>Daily Graphs</span>
                 </a>
               </nav>
+
+              {/* Theme Toggle */}
               <ThemeToggle />
+
+              {/* Logout Button */}
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200"
+                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm flex items-center space-x-1"
               >
-                Logout
+                <span className="hidden sm:inline">Logout</span>
+                <span className="sm:hidden">🚪</span>
               </button>
             </div>
           </div>
         </div>
       </header>
 
+      {/* Mobile Sidebar */}
+      <div className={`fixed inset-0 z-50 sm:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
+        {/* Overlay */}
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+        
+        {/* Sidebar */}
+        <div className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Navigation</h2>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              aria-label="Close sidebar"
+            >
+              <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Sidebar Content */}
+          <div className="p-4 space-y-4">
+            {/* Daily Graphs Link */}
+            <button
+              onClick={() => { 
+                window.location.href = "/daily-graphs"; 
+                setIsMobileMenuOpen(false); 
+              }}
+              className="flex items-center w-full px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+            >
+              <span className="mr-3 text-lg">📊</span>
+              <span className="font-medium">Daily Graphs</span>
+            </button>
+            
+            {/* Dashboard Link (Current Page) */}
+            <button
+              onClick={() => { 
+                window.scrollTo(0, 0); 
+                setIsMobileMenuOpen(false); 
+              }}
+              className="flex items-center w-full px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+            >
+              <span className="mr-3 text-lg">🏠</span>
+              <span className="font-medium">Dashboard</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Date Range Picker */}
         <DateRangePicker
           selectedAccount={selectedAccount}
@@ -399,62 +480,67 @@ export default function Home() {
 
         {/* MMS Campaign Level Filters */}
         {selectedAccount === "mms" && selectedLevel === "campaign" && tableData.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 mt-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-6 sm:mb-8 mt-6 sm:mt-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <span>🔍</span>
               Overview Card Filters
             </h3>
-            <div className="flex flex-wrap items-center gap-4 mb-4">
-              {/* Country Filter */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Country:
-                </label>
-                <select
-                  value={selectedCountry}
-                  onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">All Countries</option>
-                  <option value="india">🇮🇳 India</option>
-                  <option value="us">🇺🇸 US</option>
-                </select>
-              </div>
+            <div className="space-y-3 sm:space-y-4 mb-4">
+              {/* First Row: Country and Platform */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Country Filter */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Country:
+                  </label>
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Countries</option>
+                    <option value="india">🇮🇳 India</option>
+                    <option value="us">🇺🇸 US</option>
+                  </select>
+                </div>
 
-              {/* Platform Filter */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Platform:
-                </label>
-                <div className="flex items-center gap-3 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
-                  {[
-                    { value: "all", label: "All", icon: "🌍" },
-                    { value: "android", label: "Android", icon: "🤖" },
-                    { value: "ios", label: "iOS", icon: "🍎" }
-                  ].map(platform => (
-                    <label key={platform.value} className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedPlatforms.includes(platform.value)}
-                        onChange={() => handlePlatformChange(platform.value)}
-                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                        {platform.icon} {platform.label}
-                      </span>
-                    </label>
-                  ))}
+                {/* Platform Filter */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Platform:
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                    {[
+                      { value: "all", label: "All", icon: "🌍" },
+                      { value: "android", label: "Android", icon: "🤖" },
+                      { value: "ios", label: "iOS", icon: "🍎" }
+                    ].map(platform => (
+                      <label key={platform.value} className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlatforms.includes(platform.value)}
+                          onChange={() => handlePlatformChange(platform.value)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                          {platform.icon} <span className="hidden sm:inline">{platform.label}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Apply Button */}
-              <button
-                onClick={handleApplyFilters}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2"
-              >
-                <span>✓</span>
-                Apply Filters
-              </button>
+              {/* Second Row: Apply Button */}
+              <div className="flex justify-start">
+                <button
+                  onClick={handleApplyFilters}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 min-w-0"
+                >
+                  <span>✓</span>
+                  <span>Apply Filters</span>
+                </button>
+              </div>
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
               Select country and platform filters, then click Apply to update the overview cards below.
