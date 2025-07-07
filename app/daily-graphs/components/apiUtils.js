@@ -189,12 +189,36 @@ export const fetchDailyData = async (
       console.log(`- Filtered aggregate data: ${filteredAggregateData.length} items`);
     }
     
-    // Apply graph level filtering for MMS campaign level aggregates (US/India)
+    // Apply graph level filtering for MMS campaign level aggregates (US/India) and platform-specific filtering
     if (selectedAccount === "mms" && selectedLevel === "campaign" && 
-        (selectedGraphLevel === "us_aggregate" || selectedGraphLevel === "india_aggregate")) {
+        (selectedGraphLevel === "us_aggregate" || selectedGraphLevel === "india_aggregate" || 
+         selectedGraphLevel === "us_android" || selectedGraphLevel === "us_ios" || 
+         selectedGraphLevel === "india_android" || selectedGraphLevel === "india_ios")) {
       
-      const targetCountry = selectedGraphLevel === "india_aggregate" ? "India" : "US";
-      console.log(`🔄 Filtering MMS campaign data for ${targetCountry} aggregate based on campaign names`);
+      // Determine target country and platform based on graph level
+      let targetCountry, targetPlatform;
+      if (selectedGraphLevel === "india_aggregate") {
+        targetCountry = "India";
+        targetPlatform = null;
+      } else if (selectedGraphLevel === "us_aggregate") {
+        targetCountry = "US";
+        targetPlatform = null;
+      } else if (selectedGraphLevel === "us_android") {
+        targetCountry = "US";
+        targetPlatform = "Android";
+      } else if (selectedGraphLevel === "us_ios") {
+        targetCountry = "US";
+        targetPlatform = "iOS";
+      } else if (selectedGraphLevel === "india_android") {
+        targetCountry = "India";
+        targetPlatform = "Android";
+      } else if (selectedGraphLevel === "india_ios") {
+        targetCountry = "India";
+        targetPlatform = "iOS";
+      }
+      
+      const filterLabel = targetPlatform ? `${targetCountry} ${targetPlatform}` : `${targetCountry} aggregate`;
+      console.log(`🔄 Filtering MMS campaign data for ${filterLabel} based on campaign names`);
       
       // Helper function to extract country from campaign name
       const extractCountryFromCampaignName = (campaignName) => {
@@ -214,28 +238,55 @@ export const fetchDailyData = async (
         return "unknown";
       };
       
-      // Filter chart data by target country based on campaign names
+      // Helper function to extract platform from campaign name
+      const extractPlatformFromCampaignName = (campaignName) => {
+        if (!campaignName) return "unknown";
+        const name = campaignName.toLowerCase();
+        
+        // Check for Android patterns
+        if (name.includes("android") || name.includes("google play") || name.includes("playstore")) {
+          return "Android";
+        }
+        
+        // Check for iOS patterns
+        if (name.includes("ios") || name.includes("iphone") || name.includes("app store") || name.includes("appstore")) {
+          return "iOS";
+        }
+        
+        return "unknown";
+      };
+      
+      // Filter chart data by target country and platform based on campaign names
       filteredChartData = allCampaigns.filter(item => {
         const country = extractCountryFromCampaignName(item.campaign_name);
-        const match = country === targetCountry;
-        console.log(`${match ? '✅' : '❌'} Campaign: "${item.campaign_name}" -> ${country} (target: ${targetCountry})`);
+        const platform = extractPlatformFromCampaignName(item.campaign_name);
+        
+        const countryMatch = country === targetCountry;
+        const platformMatch = targetPlatform ? platform === targetPlatform : true;
+        const match = countryMatch && platformMatch;
+        
+        console.log(`${match ? '✅' : '❌'} Campaign: "${item.campaign_name}" -> ${country}/${platform} (target: ${targetCountry}/${targetPlatform || 'any'})`);
         if (match) {
           console.log(`   📊 Match found - Spend: ${item.spend}, Purchases: ${item.actions?.find(a => a.action_type === 'purchase')?.value || 0}`);
         }
         return match;
       });
       
-      // Filter aggregate data by target country based on campaign names
+      // Filter aggregate data by target country and platform based on campaign names
       filteredAggregateData = dataForOverviewCards.filter(item => {
         const country = extractCountryFromCampaignName(item.campaign_name);
-        return country === targetCountry;
+        const platform = extractPlatformFromCampaignName(item.campaign_name);
+        
+        const countryMatch = country === targetCountry;
+        const platformMatch = targetPlatform ? platform === targetPlatform : true;
+        return countryMatch && platformMatch;
       });
       
-      console.log(`🔍 ${targetCountry} Aggregate filtering results:`);
+      console.log(`🔍 ${filterLabel} filtering results:`);
       console.log(`- Total campaigns: ${allCampaigns.length}`);
-      console.log(`- ${targetCountry} campaigns: ${filteredChartData.length}`);
-      console.log(`- Sample ${targetCountry} campaign names:`, filteredChartData.slice(0, 3).map(c => c.campaign_name));
-      console.log(`- ${targetCountry} aggregate data: ${filteredAggregateData.length} items`);
+      console.log(`- ${filterLabel} campaigns: ${filteredChartData.length}`);
+      console.log(`- Sample ${filterLabel} campaign names:`, filteredChartData.slice(0, 3).map(c => c.campaign_name));
+      console.log(`- ${filterLabel} aggregate data: ${filteredAggregateData.length} items`);
       
       // Aggregate the filtered campaign data by date to create account-level style data
       const aggregatedByDate = {};

@@ -569,6 +569,10 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
                   <option value="normal">Normal</option>
                   <option value="us_aggregate">US Aggregate</option>
                   <option value="india_aggregate">India Aggregate</option>
+                  <option value="us_android">US Android</option>
+                  <option value="us_ios">US iOS</option>
+                  <option value="india_android">India Android</option>
+                  <option value="india_ios">India iOS</option>
                 </select>
               </div>
             )}

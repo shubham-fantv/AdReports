@@ -47,13 +47,13 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCo
   // - US market: ₹1700 per credit pack 
   let indiaPurchases, usPurchases, totalRevenue;
   
-  if (selectedLevel === "campaign" && selectedGraphLevel === "india_aggregate") {
-    // For India aggregate, all purchases are India purchases
+  if (selectedLevel === "campaign" && (selectedGraphLevel === "india_aggregate" || selectedGraphLevel === "india_android" || selectedGraphLevel === "india_ios")) {
+    // For India aggregate or India platform-specific, all purchases are India purchases
     indiaPurchases = totalPurchases;
     usPurchases = 0;
     totalRevenue = indiaPurchases * 499;
-  } else if (selectedLevel === "campaign" && selectedGraphLevel === "us_aggregate") {
-    // For US aggregate, all purchases are US purchases
+  } else if (selectedLevel === "campaign" && (selectedGraphLevel === "us_aggregate" || selectedGraphLevel === "us_android" || selectedGraphLevel === "us_ios")) {
+    // For US aggregate or US platform-specific, all purchases are US purchases
     indiaPurchases = 0;
     usPurchases = totalPurchases;
     totalRevenue = usPurchases * 1700;
@@ -114,6 +114,14 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCo
       return "MMS Performance Overview - India Aggregate";
     } else if (selectedLevel === "campaign" && selectedGraphLevel === "us_aggregate") {
       return "MMS Performance Overview - US Aggregate";
+    } else if (selectedLevel === "campaign" && selectedGraphLevel === "india_android") {
+      return "MMS Performance Overview - India Android";
+    } else if (selectedLevel === "campaign" && selectedGraphLevel === "india_ios") {
+      return "MMS Performance Overview - India iOS";
+    } else if (selectedLevel === "campaign" && selectedGraphLevel === "us_android") {
+      return "MMS Performance Overview - US Android";
+    } else if (selectedLevel === "campaign" && selectedGraphLevel === "us_ios") {
+      return "MMS Performance Overview - US iOS";
     } else {
       return "MMS Performance Overview";
     }
