@@ -58,11 +58,23 @@ export default function DateRangePicker({
   const handleAccountChange = (e) => {
     setSelectedAccount(e.target.value);
     onClearData();
+    // Refetch data if there's an active date range
+    if (dailyStartDate && dailyEndDate) {
+      setTimeout(() => {
+        onDateRangeChange(dailyStartDate, dailyEndDate);
+      }, 100);
+    }
   };
 
   const handleLevelChange = (e) => {
     setSelectedLevel(e.target.value);
     onClearData();
+    // Refetch data if there's an active date range
+    if (dailyStartDate && dailyEndDate) {
+      setTimeout(() => {
+        onDateRangeChange(dailyStartDate, dailyEndDate);
+      }, 100);
+    }
   };
 
   return (
