@@ -1,6 +1,8 @@
 // Metrics calculation utilities
+// Currency conversion is already handled in the API layer for MMS_AF
+// So we just need to parse the spend values here
 
-export const calculateSummaryMetrics = (chartData, getActionValue) => {
+export const calculateSummaryMetrics = (chartData, getActionValue, selectedAccount) => {
   if (!chartData.length) return { totalSpend: 0, totalPurchases: 0, costPerPurchase: 0 };
   
   const totalSpend = chartData.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
@@ -10,7 +12,7 @@ export const calculateSummaryMetrics = (chartData, getActionValue) => {
   return { totalSpend, totalPurchases, costPerPurchase };
 };
 
-export const calculateMmsMetrics = (chartData, getActionValue) => {
+export const calculateMmsMetrics = (chartData, getActionValue, selectedAccount) => {
   if (!chartData.length) return { 
     totalSpend: 0, 
     totalSales: 0, 

@@ -1,5 +1,6 @@
 "use client";
 import { Line, Bar, Scatter, Pie } from "react-chartjs-2";
+import { parseSpend, formatCurrency } from "../../utils/currencyHelpers";
 
 // Chart Components
 
@@ -472,7 +473,7 @@ export const IndividualMetricsGrid = ({
   getActionValue, 
   getChartOptions, 
   theme,
-  accountType = "default" 
+  accountType = "default"
 }) => {
   if (!chartData.length) return null;
 
@@ -635,7 +636,7 @@ export const DeviceBreakdownTable = ({ deviceData, getActionValue, theme }) => {
   deviceData.forEach(item => {
     const device = item.device_platform;
     const deviceCategory = normalizeDevicePlatform(device);
-    const spend = parseFloat(item.spend || 0);
+    const spend = parseSpend(item.spend);
     const purchases = getActionValue(item.actions, 'purchase');
     const clicks = parseFloat(item.clicks || 0);
     const impressions = parseFloat(item.impressions || 0);
@@ -715,7 +716,7 @@ export const DeviceBreakdownTable = ({ deviceData, getActionValue, theme }) => {
                   </td>
                   <td className="py-4 px-4 text-right">
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      ₹{row.spend.toLocaleString()}
+                      {formatCurrency(row.spend)}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-right">
@@ -787,7 +788,7 @@ export const PlacementBreakdownChart = ({ placementData, theme }) => {
   
   placementData.forEach(item => {
     const placement = `${item.publisher_platform || 'Unknown'} - ${item.platform_position || 'Unknown'}`;
-    const spend = parseFloat(item.spend || 0);
+    const spend = parseSpend(item.spend);
     const purchases = getActionValue(item.actions, 'purchase');
     
     if (!placementMap[placement]) {
@@ -1038,7 +1039,7 @@ export const PlacementBreakdownChart = ({ placementData, theme }) => {
                   {item.placement}
                 </td>
                 <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
-                  ₹{Math.round(item.spend).toLocaleString()}
+                  {formatCurrency(item.spend)}
                 </td>
                 <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
                   {item.spendPercent.toFixed(1)}%

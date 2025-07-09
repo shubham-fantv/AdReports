@@ -1,4 +1,5 @@
 "use client";
+import { parseSpend } from "../../utils/currencyHelpers";
 
 // Performance cards components
 
@@ -36,7 +37,7 @@ export const MmsPerformanceCards = ({ chartData, calculateMmsMetrics, selectedCo
   console.log('🎯 MMS Cards - Timestamp:', new Date().toISOString());
 
   // Calculate basic metrics directly from the chosen data source
-  const totalSpend = dataForCalculation.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
+  const totalSpend = dataForCalculation.reduce((sum, item) => sum + parseSpend(item.spend), 0);
   const totalPurchases = dataForCalculation.reduce((sum, item) => sum + getActionValue(item.actions, 'purchase'), 0);
   const totalImpressions = dataForCalculation.reduce((sum, item) => sum + parseFloat(item.impressions || 0), 0);
   const totalClicks = dataForCalculation.reduce((sum, item) => sum + parseFloat(item.clicks || 0), 0);
@@ -321,7 +322,7 @@ export const VideoNationPerformanceCards = ({ chartData, calculateSummaryMetrics
   console.log('🎬 VideoNation Cards - Data being used:', dataForCalculation);
 
   // Calculate metrics directly from the chosen data source
-  const totalSpend = dataForCalculation.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
+  const totalSpend = dataForCalculation.reduce((sum, item) => sum + parseSpend(item.spend), 0);
   const totalPurchases = dataForCalculation.reduce((sum, item) => sum + getActionValue(item.actions, 'purchase'), 0);
   const totalClicks = dataForCalculation.reduce((sum, item) => sum + parseFloat(item.clicks || 0), 0);
   const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
@@ -329,7 +330,7 @@ export const VideoNationPerformanceCards = ({ chartData, calculateSummaryMetrics
   // Compare with chart data if using aggregate data
   if (window.aggregateDataForCards && window.aggregateDataForCards.length > 0) {
     const chartDataPurchases = chartData.reduce((sum, item) => sum + getActionValue(item.actions, 'purchase'), 0);
-    const chartDataSpend = chartData.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
+    const chartDataSpend = chartData.reduce((sum, item) => sum + parseSpend(item.spend), 0);
     console.log('📊 VideoNation COMPARISON - Chart Data vs Aggregate Data:');
     console.log('- Chart Data Purchases:', chartDataPurchases);
     console.log('- Aggregate Data Purchases:', totalPurchases);

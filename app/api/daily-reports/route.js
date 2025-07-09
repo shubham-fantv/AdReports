@@ -1,4 +1,5 @@
 import axios from "axios";
+import { convertSpendAPI } from "../../utils/currencyHelpers";
 
 const presetToDateRange = (preset) => {
   const today = new Date();
@@ -48,14 +49,30 @@ export async function GET(req) {
   // Select credentials based on account
   const accessToken = account === "mms" 
     ? process.env.FACEBOOK_MMS_ACCESS_TOKEN 
+    : account === "mms_af"
+    ? process.env.FACEBOOK_MMS_ACCESS_TOKEN_AF
+    : account === "lf_af"
+    ? process.env.FACEBOOK_LF_ACCESS_TOKEN_AF
+    : account === "videonation_af"
+    ? process.env.FACEBOOK_ACCESS_TOKEN_VIDEONATION_AF
+    : account === "photonation_af"
+    ? process.env.FACEBOOK_ACCESS_TOKEN_PHOTONATIONN_AF
     : process.env.FACEBOOK_ACCESS_TOKEN_VIDEONATION;
   const adAccountId = account === "mms" 
     ? `act_${process.env.FACEBOOK_MMS_AD_ACCOUNT_ID}`
-    : process.env.FACEBOOK_AD_ACCOUNT_ID_VIDEONATION;
+    : account === "mms_af"
+    ? `act_${process.env.FACEBOOK_MMS_AD_ACCOUNT_AF}`
+    : account === "lf_af"
+    ? `act_${process.env.FACEBOOK_LF_AD_ACCOUNT_AF}`
+    : account === "videonation_af"
+    ? `act_${process.env.FACEBOOK_AD_ACCOUNT_ID_VIDEONATION_AF}`
+    : account === "photonation_af"
+    ? `act_${process.env.FACEBOOK_AD_ACCOUNT_ID_PHOTOTION_AF}`
+    : `act_${process.env.FACEBOOK_AD_ACCOUNT_ID_VIDEONATION}`;
   
   // Validate credentials exist
   if (!accessToken || !adAccountId) {
-    const accountType = account === "mms" ? "MMS" : "VideoNation";
+    const accountType = account === "mms" ? "MMS" : account === "mms_af" ? "MMS_AF" : account === "lf_af" ? "LF_AF" : account === "videonation_af" ? "VideoNation_AF" : account === "photonation_af" ? "PhotoNation_AF" : "VideoNation";
     return new Response(
       JSON.stringify({ 
         error: `Missing ${accountType} credentials. Please check environment variables.` 
@@ -87,6 +104,37 @@ export async function GET(req) {
     console.log(`Ad account ID: ${adAccountId}`);
     console.log(`Level: ${level}`);
     console.log(`Fields param: ${fields}`);
+    
+    // Debug credentials for MMS, MMS_AF, LF_AF, VideoNation_AF, and PhotoNation_AF comparison
+    if (account === "mms" || account === "mms_af" || account === "lf_af" || account === "videonation_af" || account === "photonation_af") {
+      console.log(`${account.toUpperCase()} Debug Info:`);
+      if (account === "mms") {
+        console.log("- FACEBOOK_MMS_ACCESS_TOKEN exists:", !!process.env.FACEBOOK_MMS_ACCESS_TOKEN);
+        console.log("- FACEBOOK_MMS_AD_ACCOUNT_ID exists:", !!process.env.FACEBOOK_MMS_AD_ACCOUNT_ID);
+        console.log("- Access token starts with:", accessToken ? accessToken.substring(0, 10) + "..." : "NONE");
+        console.log("- Ad account ID:", adAccountId);
+      } else if (account === "mms_af") {
+        console.log("- FACEBOOK_MMS_ACCESS_TOKEN_AF exists:", !!process.env.FACEBOOK_MMS_ACCESS_TOKEN_AF);
+        console.log("- FACEBOOK_MMS_AD_ACCOUNT_AF exists:", !!process.env.FACEBOOK_MMS_AD_ACCOUNT_AF);
+        console.log("- Access token starts with:", accessToken ? accessToken.substring(0, 10) + "..." : "NONE");
+        console.log("- Ad account ID:", adAccountId);
+      } else if (account === "lf_af") {
+        console.log("- FACEBOOK_LF_ACCESS_TOKEN_AF exists:", !!process.env.FACEBOOK_LF_ACCESS_TOKEN_AF);
+        console.log("- FACEBOOK_LF_AD_ACCOUNT_AF exists:", !!process.env.FACEBOOK_LF_AD_ACCOUNT_AF);
+        console.log("- Access token starts with:", accessToken ? accessToken.substring(0, 10) + "..." : "NONE");
+        console.log("- Ad account ID:", adAccountId);
+      } else if (account === "videonation_af") {
+        console.log("- FACEBOOK_ACCESS_TOKEN_VIDEONATION_AF exists:", !!process.env.FACEBOOK_ACCESS_TOKEN_VIDEONATION_AF);
+        console.log("- FACEBOOK_AD_ACCOUNT_ID_VIDEONATION_AF exists:", !!process.env.FACEBOOK_AD_ACCOUNT_ID_VIDEONATION_AF);
+        console.log("- Access token starts with:", accessToken ? accessToken.substring(0, 10) + "..." : "NONE");
+        console.log("- Ad account ID:", adAccountId);
+      } else if (account === "photonation_af") {
+        console.log("- FACEBOOK_ACCESS_TOKEN_PHOTONATIONN_AF exists:", !!process.env.FACEBOOK_ACCESS_TOKEN_PHOTONATIONN_AF);
+        console.log("- FACEBOOK_AD_ACCOUNT_ID_PHOTOTION_AF exists:", !!process.env.FACEBOOK_AD_ACCOUNT_ID_PHOTOTION_AF);
+        console.log("- Access token starts with:", accessToken ? accessToken.substring(0, 10) + "..." : "NONE");
+        console.log("- Ad account ID:", adAccountId);
+      }
+    }
     
     // Use provided fields or default based on level
     const defaultFields = level === "campaign" 
@@ -123,6 +171,17 @@ export async function GET(req) {
     console.log(`Facebook API call successful!`);
 
     console.log(`API response for ${account} (${since} to ${until}):`, JSON.stringify(data, null, 2));
+    
+    // Log campaign count and sample data for comparison
+    const campaignCount = data.data ? data.data.length : 0;
+    console.log(`${account.toUpperCase()} - Campaigns returned: ${campaignCount}`);
+    if (data.data && data.data.length > 0) {
+      console.log(`${account.toUpperCase()} - Sample campaign:`, {
+        name: data.data[0].campaign_name,
+        spend: data.data[0].spend,
+        impressions: data.data[0].impressions
+      });
+    }
 
     let processedCampaigns = data.data || [];
 
@@ -130,8 +189,8 @@ export async function GET(req) {
       // For campaign level with per_day=true, return individual campaigns without aggregation
       processedCampaigns = processedCampaigns.map(item => ({
         ...item,
-        // Ensure numeric values are properly formatted
-        spend: parseFloat(item.spend || 0),
+        // Ensure numeric values are properly formatted with currency conversion
+        spend: convertSpendAPI(item.spend, account),
         impressions: parseInt(item.impressions || 0),
         clicks: parseInt(item.clicks || 0),
         ctr: parseFloat(item.ctr || 0),
@@ -146,8 +205,8 @@ export async function GET(req) {
       // Facebook API already aggregates when per_day is not specified, so just format the data
       processedCampaigns = processedCampaigns.map(item => ({
         ...item,
-        // Ensure numeric values are properly formatted
-        spend: parseFloat(item.spend || 0),
+        // Ensure numeric values are properly formatted with currency conversion
+        spend: convertSpendAPI(item.spend, account),
         impressions: parseInt(item.impressions || 0),
         clicks: parseInt(item.clicks || 0),
         ctr: parseFloat(item.ctr || 0),
@@ -191,7 +250,7 @@ export async function GET(req) {
         // Aggregate metrics
         dailyData[date].impressions += parseInt(item.impressions || 0);
         dailyData[date].clicks += parseInt(item.clicks || 0);
-        dailyData[date].spend += parseFloat(item.spend || 0);
+        dailyData[date].spend += convertSpendAPI(item.spend, account);
         
         // Combine actions
         if (item.actions) {
@@ -245,13 +304,15 @@ export async function GET(req) {
       processedCampaigns = aggregateData.data || [];
       
       
-      // Add display fields for account-level data
+      // Add display fields for account-level data and apply currency conversion
       processedCampaigns = processedCampaigns.map((item) => ({
         ...item,
         campaign_name: `Total (${since} to ${until})`,
         date_start: since,
         date_stop: until,
-        date: since
+        date: since,
+        // Apply currency conversion for MMS_AF
+        spend: convertSpendAPI(item.spend, account)
       }));
     }
 
@@ -269,9 +330,10 @@ export async function GET(req) {
       },
     });
   } catch (error) {
-    const accountType = account === "mms" ? "MMS" : "VideoNation";
+    const accountType = account === "mms" ? "MMS" : account === "mms_af" ? "MMS_AF" : account === "lf_af" ? "LF_AF" : account === "videonation_af" ? "VideoNation_AF" : account === "photonation_af" ? "PhotoNation_AF" : "VideoNation";
     console.error(`Error fetching ${accountType} daily reports data:`, error.message);
     console.error(`Error details:`, error.response?.data || error);
+    console.error(`Account: ${account}, Date range: ${since} to ${until}`);
     
     // Check if it's an authentication error
     if (error.response?.status === 401 || error.message.includes('Invalid access token')) {

@@ -1,5 +1,8 @@
 import axios from "axios";
 
+// Helper function to check if account is MMS-type (mms or mms_af)
+const isMmsAccount = (account) => account === "mms" || account === "mms_af";
+
 export async function GET(req, { params }) {
   const { postId } = params;
   const { searchParams } = new URL(req.url);
@@ -8,11 +11,17 @@ export async function GET(req, { params }) {
   // Select credentials based on account
   const accessToken = account === "mms" 
     ? process.env.FACEBOOK_MMS_ACCESS_TOKEN 
+    : account === "mms_af"
+    ? process.env.FACEBOOK_MMS_ACCESS_TOKEN_AF
+    : account === "lf_af"
+    ? process.env.FACEBOOK_LF_ACCESS_TOKEN_AF
+    : account === "videonation_af"
+    ? process.env.FACEBOOK_ACCESS_TOKEN_VIDEONATION_AF
     : process.env.FACEBOOK_ACCESS_TOKEN_VIDEONATION;
   
   // Validate credentials exist
   if (!accessToken) {
-    const accountType = account === "mms" ? "MMS" : "VideoNation";
+    const accountType = account === "mms" ? "MMS" : account === "mms_af" ? "MMS_AF" : account === "lf_af" ? "LF_AF" : account === "videonation_af" ? "VideoNation_AF" : "VideoNation";
     return new Response(
       JSON.stringify({ 
         error: `Missing ${accountType} access token. Please check environment variables.` 
@@ -48,7 +57,7 @@ export async function GET(req, { params }) {
       },
     });
   } catch (error) {
-    const accountType = account === "mms" ? "MMS" : "VideoNation";
+    const accountType = account === "mms" ? "MMS" : account === "mms_af" ? "MMS_AF" : account === "lf_af" ? "LF_AF" : account === "videonation_af" ? "VideoNation_AF" : "VideoNation";
     console.error(`Error fetching post data for ${postId} (${accountType}):`, error.message);
     console.error(`Error details:`, error.response?.data || error);
     

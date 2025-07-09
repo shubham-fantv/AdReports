@@ -1,4 +1,7 @@
 // Chart data generation utilities
+// Currency conversion is already handled in the API layer for MMS_AF
+// So we just need to parse the spend values here
+
 export const generateLineChartData = (chartData, theme) => {
   if (!chartData.length) return null;
 
@@ -9,7 +12,7 @@ export const generateLineChartData = (chartData, theme) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   });
 
-  const spendData = sortedData.map(item => parseFloat(item.spend || 0));
+  const spendData = sortedData.map(item => Math.round(parseFloat(item.spend || 0)));
   const impressionsData = sortedData.map(item => parseFloat(item.impressions || 0));
   const clicksData = sortedData.map(item => parseFloat(item.clicks || 0));
 
@@ -61,7 +64,7 @@ export const generateIndividualMetricChart = (chartData, metric, getActionValue)
 
   switch (metric) {
     case 'spend':
-      data = sortedData.map(item => parseFloat(item.spend || 0));
+      data = sortedData.map(item => Math.round(parseFloat(item.spend || 0)));
       color = 'rgb(255, 0, 255)'; // Pure electric magenta
       label = 'Spend (₹)';
       break;
@@ -102,7 +105,7 @@ export const generateIndividualMetricChart = (chartData, metric, getActionValue)
       break;
     case 'cost_per_purchase':
       data = sortedData.map(item => {
-        const spend = parseFloat(item.spend || 0);
+        const spend = Math.round(parseFloat(item.spend || 0));
         const purchases = getActionValue(item.actions, 'purchase');
         return purchases > 0 ? spend / purchases : 0;
       });
@@ -171,7 +174,7 @@ export const generateCampaignChartData = (metric, campaigns, borderColor) => {
       case 'user_registrations':
         return getActionValue(campaign.actions, 'complete_registration');
       case 'cost_per_purchase':
-        const spend = parseFloat(campaign.spend || 0);
+        const spend = Math.round(parseFloat(campaign.spend || 0));
         const purchases = getActionValue(campaign.actions, 'purchase');
         return purchases > 0 ? spend / purchases : 0;
       default:
@@ -299,7 +302,7 @@ export const generateSpendVsPurchaseChartData = (chartData, getActionValue) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   });
 
-  const spendData = sortedData.map(item => parseFloat(item.spend || 0));
+  const spendData = sortedData.map(item => Math.round(parseFloat(item.spend || 0)));
   const purchaseData = sortedData.map(item => getActionValue(item.actions, 'purchase'));
 
   return {
@@ -331,7 +334,7 @@ export const generateSpendVsPurchaseScatterData = (chartData, getActionValue) =>
   if (!chartData.length) return null;
 
   const scatterData = chartData.map(item => {
-    const spend = parseFloat(item.spend || 0);
+    const spend = Math.round(parseFloat(item.spend || 0));
     const purchases = getActionValue(item.actions, 'purchase');
     const date = new Date(item.date_start);
     const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -466,7 +469,7 @@ export const generateAgeSpendPieChartData = (ageData) => {
   ageData.forEach(item => {
     const age = item.age;
     const ageBracket = normalizeAgeBracket(age);
-    const spend = parseFloat(item.spend || 0);
+    const spend = Math.round(parseFloat(item.spend || 0));
     
     ageBrackets[ageBracket] += spend;
   });
@@ -681,7 +684,7 @@ export const generateGenderSpendPieChartData = (genderData) => {
   genderData.forEach(item => {
     const gender = item.gender;
     const genderCategory = normalizeGender(gender);
-    const spend = parseFloat(item.spend || 0);
+    const spend = Math.round(parseFloat(item.spend || 0));
     
     genderCategories[genderCategory] += spend;
   });

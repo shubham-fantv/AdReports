@@ -5,6 +5,13 @@ import { format, subDays } from 'date-fns';
 import ThemeToggle from '../../components/ThemeToggle';
 import { useMobileMenu } from '../../contexts/MobileMenuContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { formatCurrency } from '../../utils/currencyHelpers';
+
+// Helper function to check if account is MMS-type (mms or mms_af) or LF-type (lf_af)
+const isMmsAccount = (account) => account === "mms" || account === "mms_af" || account === "lf_af";
+
+// Helper function to check if account is VideoNation-type (default or videonation_af)
+const isVideoNationAccount = (account) => account === "default" || account === "videonation_af" || account === "photonation_af";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -89,7 +96,7 @@ export default function DailyGraphsPage() {
   const [activeRange, setActiveRange] = useState("L7");
   const [analysis, setAnalysis] = useState("");
   const [analyzingData, setAnalyzingData] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState("default");
+  const [selectedAccount, setSelectedAccount] = useState("mms_af");
   const [selectedLevel, setSelectedLevel] = useState("account");
   const [selectedCountry, setSelectedCountry] = useState("all");
   const [selectedGraphLevel, setSelectedGraphLevel] = useState("normal");
@@ -129,7 +136,7 @@ export default function DailyGraphsPage() {
 
   // Console log MMS purchase data when chartData updates
   useEffect(() => {
-    if (selectedAccount === "mms" && selectedLevel === "account" && chartData.length > 0) {
+    if (isMmsAccount(selectedAccount) && selectedLevel === "account" && chartData.length > 0) {
       const totalPurchasesOldMethod = chartData.reduce((sum, item) => {
         const actions = item.actions || [];
         const purchaseAction = actions.find(a => a.action_type === 'purchase');
@@ -258,8 +265,12 @@ export default function DailyGraphsPage() {
     if (!data || data.length === 0) return "No campaign data available for analysis. Launch some campaigns to get AI-powered insights for your platform! 🚀";
     
     // Platform context for better insights
-    const platformContext = account === "mms" 
+    const platformContext = account === "mms" || account === "mms_af"
       ? "MMS (AI music generation mobile app with credit pack purchasing model)"
+      : account === "lf_af"
+      ? "LF_AF (AI content generation platform with AED currency)"
+      : account === "videonation_af"
+      ? "VideoNation_AF (AI video/image generation web platform with AED currency)"
       : "VideoNation (AI video/image generation web platform with subscription model)";
     
     const totalSpend = data.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
@@ -269,7 +280,7 @@ export default function DailyGraphsPage() {
     const avgCPC = totalClicks > 0 ? totalSpend / totalClicks : 0;
     
     let totalPurchases = 0;
-    if (account === "mms") {
+    if (isMmsAccount(account)) {
       totalPurchases = data.reduce((sum, item) => {
         return sum + getActionValue(item.actions, 'purchase');
       }, 0);
@@ -303,9 +314,9 @@ export default function DailyGraphsPage() {
     let aiPersonality = "";
     
     // Performance observations based on data patterns with platform context
-    const businessModel = account === "mms" ? "credit pack purchases" : "subscription conversions";
-    const platformType = account === "mms" ? "AI music generation mobile app" : "AI video/image creation web platform";
-    const distributionChannel = account === "mms" ? "mobile app" : "web platform";
+    const businessModel = isMmsAccount(account) ? "credit pack purchases" : "subscription conversions";
+    const platformType = isMmsAccount(account) ? "AI music generation mobile app" : "AI video/image creation web platform";
+    const distributionChannel = isMmsAccount(account) ? "mobile app" : "web platform";
     
     if (avgCTR > 3.0 && conversionRate > 3.0 && costPerPurchase < 200) {
       performanceGrade = "🚀 High Performance Pattern";
@@ -503,11 +514,21 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
               <select
                 value={selectedAccount}
                 onChange={(e) => {
-                  setSelectedAccount(e.target.value);
+                  const newAccount = e.target.value;
+                  console.log(`Daily graphs: Account changing from ${selectedAccount} to ${newAccount}`);
+                  setSelectedAccount(newAccount);
                   setChartData([]);
+                  setAgeData([]);
+                  setGenderData([]);
+                  setDeviceData([]);
+                  setLoading(false);
                 }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white"
               >
+                <option value="mms_af">MMS_AF</option>
+                <option value="lf_af">LF_AF</option>
+                <option value="videonation_af">VideoNation_AF</option>
+                <option value="photonation_af">PhotoNation_AF</option>
                 <option value="default">VideoNation</option>
                 <option value="mms">MMS</option>
               </select>
@@ -532,7 +553,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             </div>
 
             {/* Country Selection - Only show for MMS account level */}
-            {selectedAccount === "mms" && selectedLevel !== "campaign" && (
+            {isMmsAccount(selectedAccount) && selectedLevel !== "campaign" && (
               <div className="flex-shrink-0">
                 <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
                   Country
@@ -553,7 +574,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             )}
 
             {/* Graph Level Selection - Only show for MMS campaign level */}
-            {selectedAccount === "mms" && selectedLevel === "campaign" && (
+            {isMmsAccount(selectedAccount) && selectedLevel === "campaign" && (
               <div className="flex-shrink-0">
                 <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
                   Graph Level
@@ -788,7 +809,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
         </div>
 
         {/* VideoNation Cards - Only show for default account and account level */}
-        {selectedAccount === "default" && selectedLevel === "account" && chartData.length > 0 && (
+        {isVideoNationAccount(selectedAccount) && selectedLevel === "account" && chartData.length > 0 && (
           <div id="performance-section">
             <VideoNationPerformanceCards 
               chartData={chartData} 
@@ -798,7 +819,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
         )}
 
         {/* MMS Cards - Show for MMS account at both account and campaign level */}
-        {selectedAccount === "mms" && chartData.length > 0 && (
+        {isMmsAccount(selectedAccount) && chartData.length > 0 && (
           <div id="performance-section">
             <MmsPerformanceCards 
             key={`mms-cards-${selectedLevel === "campaign" ? selectedGraphLevel : selectedCountry}-${chartData.length}`}
@@ -843,7 +864,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
         )}
 
         {/* Device Breakdown Table - Only show for VideoNation account and account level */}
-        {selectedAccount === "default" && selectedLevel === "account" && deviceData.length > 0 && (
+        {isVideoNationAccount(selectedAccount) && selectedLevel === "account" && deviceData.length > 0 && (
           <div id="device-breakdown" className="mb-8">
             <DeviceBreakdownTable 
               deviceData={deviceData} 
@@ -854,7 +875,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
         )}
 
         {/* Spend vs Purchase Chart - Only show for MMS account and account level */}
-        {selectedAccount === "mms" && selectedLevel === "account" && chartData.length > 0 && (
+        {isMmsAccount(selectedAccount) && selectedLevel === "account" && chartData.length > 0 && (
           <SpendVsPurchaseLineChart 
             chartData={chartData} 
             generateSpendVsPurchaseChartData={wrappedGenerateSpendVsPurchaseChartData}
@@ -864,7 +885,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
         )}
 
         {/* Side-by-Side Charts - Only show for MMS account and account level */}
-        {selectedAccount === "mms" && selectedLevel === "account" && chartData.length > 0 && (
+        {isMmsAccount(selectedAccount) && selectedLevel === "account" && chartData.length > 0 && (
           <div id="correlations">
             <SideBySideCharts 
             chartData={chartData} 
@@ -878,7 +899,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
         )}
 
         {/* Audience Breakdown - Only show for MMS account and account level, skip if country filter is applied */}
-        {selectedAccount === "mms" && selectedLevel === "account" && selectedCountry === "all" && (ageData.length > 0 || genderData.length > 0) && (
+        {isMmsAccount(selectedAccount) && selectedLevel === "account" && selectedCountry === "all" && (ageData.length > 0 || genderData.length > 0) && (
           <div id="age-analytics" className="mb-8">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="mb-6">
@@ -933,7 +954,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
         )}
 
         {/* VideoNation Cards - Show for VideoNation campaign level only (account level cards are already shown at top) */}
-        {selectedAccount === "default" && selectedLevel === "campaign" && chartData.length > 0 && (
+        {isVideoNationAccount(selectedAccount) && selectedLevel === "campaign" && chartData.length > 0 && (
           <VideoNationPerformanceCards 
             chartData={chartData} 
             calculateSummaryMetrics={wrappedCalculateSummaryMetrics}
@@ -946,7 +967,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
           <div className="space-y-6">
 
             {/* Show Individual Metrics Grid for Aggregates, Individual Campaign Charts for Normal */}
-            {(selectedAccount === "mms" && (selectedGraphLevel === "us_aggregate" || selectedGraphLevel === "india_aggregate")) ? (
+            {(isMmsAccount(selectedAccount) && (selectedGraphLevel === "us_aggregate" || selectedGraphLevel === "india_aggregate")) ? (
               // Show account-level style charts for aggregates
               <IndividualMetricsGrid 
                 chartData={chartData} 
@@ -962,16 +983,16 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
                 {getUniqueCampaigns(chartData, selectedLevel)
                   .filter(campaign => {
                     // Filter out campaigns with zero spend across entire date range
-                    const totalSpend = campaign.data.reduce((sum, item) => sum + (parseFloat(item.spend) || 0), 0);
+                    const totalSpend = campaign.data.reduce((sum, item) => sum + parseSpend(item.spend), 0);
                     if (totalSpend === 0) return false;
                     
                     // Filter out campaigns where all individual dates have spend < ₹10
-                    const hasValidSpendDates = campaign.data.some(item => (parseFloat(item.spend) || 0) >= 10);
+                    const hasValidSpendDates = campaign.data.some(item => parseSpend(item.spend) >= 10);
                     return hasValidSpendDates;
                   })
                   .map(campaign => {
                     // Filter the campaign data to only include dates with spend >= ₹10
-                    const filteredData = campaign.data.filter(item => (parseFloat(item.spend) || 0) >= 10);
+                    const filteredData = campaign.data.filter(item => parseSpend(item.spend) >= 10);
                     return {
                       ...campaign,
                       data: filteredData
@@ -990,7 +1011,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
                   { key: 'user_registrations', title: 'Registrations', icon: '👤', color: '#ec4899' }
                 ];
 
-                if (selectedAccount === "mms") {
+                if (isMmsAccount(selectedAccount)) {
                   return [...baseMetrics, { key: 'app_install', title: 'App Install', icon: '📱', color: '#a855f7' }];
                 } else {
                   return [...baseMetrics, { key: 'add_to_cart', title: 'Add to Cart', icon: '🛍️', color: '#a855f7' }];
@@ -1077,11 +1098,11 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             
             {getUniqueCampaigns(chartData, selectedLevel)
               .filter(campaign => {
-                const totalSpend = campaign.data.reduce((sum, item) => sum + (parseFloat(item.spend) || 0), 0);
+                const totalSpend = campaign.data.reduce((sum, item) => sum + parseSpend(item.spend), 0);
                 if (totalSpend === 0) return false;
                 
                 // Filter out campaigns where all individual dates have spend < ₹10
-                const hasValidSpendDates = campaign.data.some(item => (parseFloat(item.spend) || 0) >= 10);
+                const hasValidSpendDates = campaign.data.some(item => parseSpend(item.spend) >= 10);
                 return hasValidSpendDates;
               }).length === 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
@@ -1096,8 +1117,8 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
             )}
             
             {/* Placement Breakdown Chart - Show for MMS campaign level (all countries) and VideoNation campaign level */}
-            {((selectedAccount === "mms" && selectedLevel === "campaign" && selectedCountry === "all") || 
-              (selectedAccount === "default" && selectedLevel === "campaign")) && 
+            {((isMmsAccount(selectedAccount) && selectedLevel === "campaign" && selectedCountry === "all") || 
+              (isVideoNationAccount(selectedAccount) && selectedLevel === "campaign")) && 
               deviceData.length > 0 && (
               <div id="placement-analytics">
                 <PlacementBreakdownChart 

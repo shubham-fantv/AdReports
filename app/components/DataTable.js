@@ -1,5 +1,9 @@
 "use client";
 import { getActionValue } from "../utils/dateHelpers";
+import { parseSpend, formatCurrency } from "../utils/currencyHelpers";
+
+// Helper function to check if account is MMS-type (mms or mms_af)
+const isMmsAccount = (account) => account === "mms" || account === "mms_af";
 
 export default function DataTable({
   tableData,
@@ -58,7 +62,7 @@ export default function DataTable({
               <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">CTR</th>
               <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Frequency</th>
               <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Cost per Purchase</th>
-              {selectedAccount === "mms" ? (
+              {isMmsAccount(selectedAccount) ? (
                 <>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">App Install</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider">Purchase</th>
@@ -89,7 +93,7 @@ export default function DataTable({
                   </td>
                 )}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right font-medium">
-                  ₹{Math.round(item.spend).toLocaleString()}
+                  {formatCurrency(item.spend)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
                   {parseInt(item.impressions).toLocaleString()}
@@ -112,11 +116,11 @@ export default function DataTable({
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
                   {(() => {
                     const purchases = getActionValue(item.actions, "purchase");
-                    const spend = parseFloat(item.spend || 0);
+                    const spend = parseSpend(item.spend);
                     return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
                   })()}
                 </td>
-                {selectedAccount === "mms" ? (
+                {isMmsAccount(selectedAccount) ? (
                   <>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
                       {getActionValue(item.actions, "mobile_app_install").toLocaleString()}
@@ -130,7 +134,7 @@ export default function DataTable({
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
                       {(() => {
                         const purchases = getActionValue(item.actions, "purchase");
-                        const spend = parseFloat(item.spend || 0);
+                        const spend = parseSpend(item.spend);
                         return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
                       })()}
                     </td>
@@ -152,7 +156,7 @@ export default function DataTable({
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-right">
                       {(() => {
                         const purchases = getActionValue(item.actions, "purchase");
-                        const spend = parseFloat(item.spend || 0);
+                        const spend = parseSpend(item.spend);
                         return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
                       })()}
                     </td>
@@ -196,11 +200,11 @@ export default function DataTable({
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
                       {(() => {
                         const purchases = getActionValue(campaign.actions, "purchase");
-                        const spend = parseFloat(campaign.spend || 0);
+                        const spend = parseSpend(campaign.spend);
                         return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
                       })()}
                     </td>
-                    {selectedAccount === "mms" ? (
+                    {isMmsAccount(selectedAccount) ? (
                       <>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
                           {getActionValue(campaign.actions, "mobile_app_install").toLocaleString()}
@@ -214,7 +218,7 @@ export default function DataTable({
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
                           {(() => {
                             const purchases = getActionValue(campaign.actions, "purchase");
-                            const spend = parseFloat(campaign.spend || 0);
+                            const spend = parseSpend(campaign.spend);
                             return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
                           })()}
                         </td>
@@ -236,7 +240,7 @@ export default function DataTable({
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-black dark:text-white text-right">
                           {(() => {
                             const purchases = getActionValue(campaign.actions, "purchase");
-                            const spend = parseFloat(campaign.spend || 0);
+                            const spend = parseSpend(campaign.spend);
                             return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
                           })()}
                         </td>
@@ -282,11 +286,11 @@ export default function DataTable({
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
                   {(() => {
                     const purchases = getActionValue(aggregateData.actions, "purchase");
-                    const spend = parseFloat(aggregateData.spend || 0);
+                    const spend = parseSpend(aggregateData.spend);
                     return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
                   })()}
                 </td>
-                {selectedAccount === "mms" ? (
+                {isMmsAccount(selectedAccount) ? (
                   <>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
                       {getActionValue(aggregateData.actions, "mobile_app_install").toLocaleString()}
@@ -300,7 +304,7 @@ export default function DataTable({
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
                       {(() => {
                         const purchases = getActionValue(aggregateData.actions, "purchase");
-                        const spend = parseFloat(aggregateData.spend || 0);
+                        const spend = parseSpend(aggregateData.spend);
                         return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
                       })()}
                     </td>
@@ -322,7 +326,7 @@ export default function DataTable({
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-900 dark:text-white text-right">
                       {(() => {
                         const purchases = getActionValue(aggregateData.actions, "purchase");
-                        const spend = parseFloat(aggregateData.spend || 0);
+                        const spend = parseSpend(aggregateData.spend);
                         return purchases > 0 ? `₹${Math.round(spend / purchases).toLocaleString()}` : "₹0";
                       })()}
                     </td>

@@ -7,6 +7,9 @@ import { getTodayIST } from "../utils/dateHelpers";
 import { calculateCustomOverview, calculateCountryBasedOverview, exportToCSV } from "../utils/businessLogic";
 import { apiService } from "../services/apiService";
 
+// Helper function to check if account is MMS-type (mms or mms_af)
+const isMmsAccount = (account) => account === "mms" || account === "mms_af";
+
 export default function Dashboard() {
   // State management
   const [selectedAccount, setSelectedAccount] = useState("default");
@@ -267,7 +270,7 @@ export default function Dashboard() {
 
   // Refresh overview when filters change for MMS campaign level
   useEffect(() => {
-    if (selectedAccount === "mms" && selectedLevel === "campaign" && tableData.length > 0) {
+    if (isMmsAccount(selectedAccount) && selectedLevel === "campaign" && tableData.length > 0) {
       console.log("Filters changed, recalculating overview...");
       const overviewFromDailyData = calculateCountryBasedOverview(tableData, selectedAccount, selectedLevel, selectedFilters);
       setOverview(overviewFromDailyData);
@@ -328,7 +331,7 @@ export default function Dashboard() {
         />
 
         {/* MMS Campaign Level Filters */}
-        {selectedAccount === "mms" && selectedLevel === "campaign" && (
+        {isMmsAccount(selectedAccount) && selectedLevel === "campaign" && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <span>🔍</span>

@@ -1,4 +1,11 @@
 // API utility functions
+import { parseSpend } from "../../utils/currencyHelpers";
+
+// Helper function to check if account is MMS-type (mms or mms_af) or LF-type (lf_af)
+const isMmsAccount = (account) => account === "mms" || account === "mms_af" || account === "lf_af";
+
+// Helper function to check if account is VideoNation-type (default or videonation_af)
+const isVideoNationAccount = (account) => account === "default" || account === "videonation_af" || account === "photonation_af";
 
 export const fetchDailyData = async (
   dailyStartDate,
@@ -19,7 +26,7 @@ export const fetchDailyData = async (
     let allCampaigns = [];
 
     // Special handling for MMS account level with specific country (india/us)
-    if (selectedAccount === "mms" && selectedLevel === "account" && (selectedCountry === "india" || selectedCountry === "us")) {
+    if (isMmsAccount(selectedAccount) && selectedLevel === "account" && (selectedCountry === "india" || selectedCountry === "us")) {
       console.log(`🌍 Special MMS country handling for: ${selectedCountry}`);
       
       // Create date array for individual day calls
@@ -91,7 +98,7 @@ export const fetchDailyData = async (
     let aggregateResult = { data: { campaigns: [] } };
     
     // For MMS account level with specific country (india/us), use the individual day data as aggregate
-    if (selectedAccount === "mms" && selectedLevel === "account" && (selectedCountry === "india" || selectedCountry === "us")) {
+    if (isMmsAccount(selectedAccount) && selectedLevel === "account" && (selectedCountry === "india" || selectedCountry === "us")) {
       console.log(`🌍 Using daily data as aggregate for MMS ${selectedCountry}`);
       // The allCampaigns already contains the country-filtered data from individual day calls
       aggregateResult = { data: { campaigns: allCampaigns } };
@@ -143,14 +150,14 @@ export const fetchDailyData = async (
     console.log(`- Aggregate data purchases: ${aggregatePurchases}`);
     console.log(`- Difference: ${aggregatePurchases - dailyPurchases}`);
     console.log(`- Data source for cards: ${aggregateResult?.data?.campaigns?.length > 0 ? 'Aggregate API' : 'Daily API'}`);
-    console.log(`- Country filter applied: ${selectedAccount === "mms" && selectedLevel === "account" && selectedCountry !== "all" ? selectedCountry : 'No filter'}`);
-    console.log(`- Graph level applied: ${selectedAccount === "mms" && selectedLevel === "campaign" ? selectedGraphLevel : 'N/A'}`);
+    console.log(`- Country filter applied: ${isMmsAccount(selectedAccount) && selectedLevel === "account" && selectedCountry !== "all" ? selectedCountry : 'No filter'}`);
+    console.log(`- Graph level applied: ${isMmsAccount(selectedAccount) && selectedLevel === "campaign" ? selectedGraphLevel : 'N/A'}`);
     
     // Filter data by country if specific country is selected for MMS account level
     let filteredChartData = allCampaigns;
     let filteredAggregateData = dataForOverviewCards;
     
-    if (selectedAccount === "mms" && selectedLevel === "account" && selectedCountry !== "all") {
+    if (isMmsAccount(selectedAccount) && selectedLevel === "account" && selectedCountry !== "all") {
       console.log(`🌍 Filtering data for country: ${selectedCountry}`);
       
       // Map selected country to API country codes
@@ -190,7 +197,7 @@ export const fetchDailyData = async (
     }
     
     // Apply graph level filtering for MMS campaign level aggregates (US/India) and platform-specific filtering
-    if (selectedAccount === "mms" && selectedLevel === "campaign" && 
+    if (isMmsAccount(selectedAccount) && selectedLevel === "campaign" && 
         (selectedGraphLevel === "us_aggregate" || selectedGraphLevel === "india_aggregate" || 
          selectedGraphLevel === "us_android" || selectedGraphLevel === "us_ios" || 
          selectedGraphLevel === "india_android" || selectedGraphLevel === "india_ios")) {
@@ -312,7 +319,7 @@ export const fetchDailyData = async (
         }
         
         // Aggregate metrics
-        aggregatedByDate[dateKey].spend += parseFloat(campaign.spend || 0);
+        aggregatedByDate[dateKey].spend += parseSpend(campaign.spend);
         aggregatedByDate[dateKey].impressions += parseFloat(campaign.impressions || 0);
         aggregatedByDate[dateKey].clicks += parseFloat(campaign.clicks || 0);
         
@@ -369,7 +376,7 @@ export const fetchDailyData = async (
     console.log(`🎯 Aggregate data contains ${filteredAggregateData.length} records`);
 
     // Fetch age breakdown data (skip if using country breakdown due to API limitations)
-    const skipAgeData = selectedAccount === "mms" && selectedLevel === "account" && selectedCountry !== "all";
+    const skipAgeData = isMmsAccount(selectedAccount) && selectedLevel === "account" && selectedCountry !== "all";
     
     if (!skipAgeData) {
       try {
@@ -410,7 +417,7 @@ export const fetchDailyData = async (
     }
 
     // Fetch gender breakdown data (skip if using country breakdown due to API limitations)
-    const skipGenderData = selectedAccount === "mms" && selectedLevel === "account" && selectedCountry !== "all";
+    const skipGenderData = isMmsAccount(selectedAccount) && selectedLevel === "account" && selectedCountry !== "all";
     
     if (!skipGenderData) {
       try {
@@ -451,7 +458,7 @@ export const fetchDailyData = async (
     }
 
     // Fetch placement breakdown data for MMS campaign level only (all countries)
-    if (selectedAccount === "mms" && selectedLevel === "campaign" && selectedCountry === "all") {
+    if (isMmsAccount(selectedAccount) && selectedLevel === "campaign" && selectedCountry === "all") {
       try {
         const placementFields = "campaign_id,campaign_name,spend,impressions,clicks,actions";
         

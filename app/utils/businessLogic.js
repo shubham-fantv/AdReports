@@ -1,4 +1,12 @@
 import { getActionValue } from "./dateHelpers";
+// Currency conversion is already handled in the API layer for MMS_AF
+// So we just need to parse the spend values here
+
+// Helper function to check if account is MMS-type (mms or mms_af) or LF-type (lf_af)
+const isMmsAccount = (account) => account === "mms" || account === "mms_af" || account === "lf_af";
+
+// Helper function to check if account is VideoNation-type (default or videonation_af)
+const isVideoNationAccount = (account) => account === "default" || account === "videonation_af" || account === "photonation_af";
 
 const getCountryFromCampaignName = (campaignName) => {
   if (!campaignName) return "unknown";
@@ -72,7 +80,7 @@ export const calculateCountryBasedOverview = (campaigns, selectedAccount, select
   });
   
   // For MMS campaign level, split by both country AND platform (India/US + Android/iOS = up to 8 sections)
-  if (selectedAccount === "mms" && selectedLevel === "campaign") {
+  if (isMmsAccount(selectedAccount) && selectedLevel === "campaign") {
     const allCampaigns = {
       // Combined platform + country filters
       india_android: campaigns.filter(c => 
@@ -129,7 +137,7 @@ export const calculateCountryBasedOverview = (campaigns, selectedAccount, select
       const categoryCamps = allCampaigns[category];
       
       if (isSelected && categoryCamps.length > 0) {
-        filteredOverviews[category] = calculateCustomOverview(categoryCamps);
+        filteredOverviews[category] = calculateCustomOverview(categoryCamps, selectedAccount);
       }
     });
     
@@ -159,7 +167,7 @@ export const calculateCountryBasedOverview = (campaigns, selectedAccount, select
       selectedKeys.forEach((key, index) => {
         const start = index * segmentSize;
         const end = start + segmentSize;
-        defaultOverviews[key] = calculateCustomOverview(campaigns.slice(start, end));
+        defaultOverviews[key] = calculateCustomOverview(campaigns.slice(start, end), selectedAccount);
       });
       
       console.log("Creating forced filtered split for MMS:", defaultOverviews);
@@ -168,8 +176,8 @@ export const calculateCountryBasedOverview = (campaigns, selectedAccount, select
     }
   }
   
-  // For default (Videonation) campaign level, split by country (India/US)
-  if (selectedAccount === "default" && selectedLevel === "campaign") {
+  // For VideoNation-type accounts (default or videonation_af) campaign level, split by country (India/US)
+  if (isVideoNationAccount(selectedAccount) && selectedLevel === "campaign") {
     const countryCampaigns = {
       india: campaigns.filter(c => getCountryFromCampaignName(c.campaign_name) === "india"),
       us: campaigns.filter(c => getCountryFromCampaignName(c.campaign_name) === "us")
@@ -187,7 +195,7 @@ export const calculateCountryBasedOverview = (campaigns, selectedAccount, select
     Object.keys(countryCampaigns).forEach(country => {
       const countryCamps = countryCampaigns[country];
       if (countryCamps.length > 0) {
-        countryOverviews[country] = calculateCustomOverview(countryCamps);
+        countryOverviews[country] = calculateCustomOverview(countryCamps, selectedAccount);
       }
     });
     
@@ -200,8 +208,8 @@ export const calculateCountryBasedOverview = (campaigns, selectedAccount, select
       console.log("No country data found for Videonation, creating default split");
       // For debugging: Always create the split to test the UI
       const halfPoint = Math.ceil(campaigns.length / 2);
-      const indiaData = calculateCustomOverview(campaigns.slice(0, halfPoint));
-      const usData = calculateCustomOverview(campaigns.slice(halfPoint));
+      const indiaData = calculateCustomOverview(campaigns.slice(0, halfPoint), selectedAccount);
+      const usData = calculateCustomOverview(campaigns.slice(halfPoint), selectedAccount);
       
       console.log("Creating forced country split for Videonation:", { indiaData, usData });
       
@@ -212,10 +220,10 @@ export const calculateCountryBasedOverview = (campaigns, selectedAccount, select
     }
   }
   
-  return { default: calculateCustomOverview(campaigns) };
+  return { default: calculateCustomOverview(campaigns, selectedAccount) };
 };
 
-export const calculateCustomOverview = (campaigns) => {
+export const calculateCustomOverview = (campaigns, selectedAccount = "default") => {
   if (!campaigns.length) return null;
 
   const totalSpend = campaigns.reduce(
@@ -255,7 +263,7 @@ export const calculateCustomOverview = (campaigns) => {
   };
 };
 
-export const calculateCampaignTotals = (campaigns) => {
+export const calculateCampaignTotals = (campaigns, selectedAccount = "default") => {
   if (!campaigns.length) return null;
 
   const totalSpend = campaigns.reduce((sum, c) => sum + parseFloat(c.spend || 0), 0);
@@ -309,7 +317,7 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
     baseHeaders.push("Campaign");
   }
   
-  if (selectedAccount === "mms") {
+  if (isMmsAccount(selectedAccount)) {
     csvData.push([
       ...baseHeaders,
       "Spend (INR)",
@@ -349,14 +357,14 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
       baseRowData.push(item.campaign_name || "N/A");
     }
     
-    if (selectedAccount === "mms") {
+    if (isMmsAccount(selectedAccount)) {
       const purchases = getActionValue(item.actions, "purchase");
-      const spend = parseFloat(item.spend || 0);
+      const spend = parseSpend(item.spend);
       const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
       
       csvData.push([
         ...baseRowData,
-        Math.round(item.spend || 0),
+        Math.round(spend),
         item.impressions || 0,
         item.clicks || 0,
         Math.round(item.cpc || 0),
@@ -370,12 +378,12 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
       ]);
     } else {
       const purchases = getActionValue(item.actions, "purchase");
-      const spend = parseFloat(item.spend || 0);
+      const spend = parseSpend(item.spend);
       const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
       
       csvData.push([
         ...baseRowData,
-        Math.round(item.spend || 0),
+        Math.round(spend),
         item.impressions || 0,
         item.clicks || 0,
         Math.round(item.cpc || 0),
@@ -398,14 +406,14 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
       aggregateRowData.push("-");
     }
     
-    if (selectedAccount === "mms") {
+    if (isMmsAccount(selectedAccount)) {
       const purchases = getActionValue(aggregateData.actions, "purchase");
-      const spend = parseFloat(aggregateData.spend || 0);
+      const spend = parseSpend(aggregateData.spend);
       const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
       
       csvData.push([
         ...aggregateRowData,
-        Math.round(aggregateData.spend),
+        Math.round(spend),
         aggregateData.impressions,
         aggregateData.clicks,
         Math.round(aggregateData.cpc),

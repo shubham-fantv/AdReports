@@ -39,7 +39,7 @@ export default function AdsTable({ adsData, selectedAccount }) {
             Ads Data (0 ads)
           </h2>
           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Ad-level performance data for {selectedAccount === "default" ? "VideoNation" : "MMS"}
+            Ad-level performance data for {selectedAccount === "default" ? "VideoNation" : selectedAccount === "videonation_af" ? "VideoNation_AF" : "MMS"}
           </p>
         </div>
         
@@ -64,7 +64,7 @@ export default function AdsTable({ adsData, selectedAccount }) {
               Ads Data ({adsData.length} ads)
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Ad-level performance data for {selectedAccount === "default" ? "VideoNation" : "MMS"}
+              Ad-level performance data for {selectedAccount === "default" ? "VideoNation" : selectedAccount === "videonation_af" ? "VideoNation_AF" : "MMS"}
             </p>
           </div>
           

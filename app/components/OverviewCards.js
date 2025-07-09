@@ -1,6 +1,8 @@
 "use client";
+// Currency conversion is already handled in the API layer for MMS_AF
+// So we just need to parse the spend values here
 
-const CountrySection = ({ country, data }) => {
+const CountrySection = ({ country, data, selectedAccount }) => {
   const countryFlag = country === "india" ? "🇮🇳" : country === "us" ? "🇺🇸" : "🌍";
   
   return (
@@ -27,7 +29,9 @@ const CountrySection = ({ country, data }) => {
               {key === "average_ctr"
                 ? (Math.round(val * 100) / 100).toLocaleString()
                 : key === "cost_per_purchase"
-                ? `₹${Math.round(val).toLocaleString()}`
+                ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
+                : key === "total_spend"
+                ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
                 : Math.round(val).toLocaleString()}
             </p>
             <div className="mt-1 sm:mt-2 text-xs text-gray-700 dark:text-gray-200">
@@ -40,7 +44,7 @@ const CountrySection = ({ country, data }) => {
   );
 };
 
-const PlatformSection = ({ platform, data }) => {
+const PlatformSection = ({ platform, data, selectedAccount }) => {
   const platformIcon = platform === "android" ? "🤖" : platform === "ios" ? "🍎" : "📱";
   
   return (
@@ -67,7 +71,9 @@ const PlatformSection = ({ platform, data }) => {
               {key === "average_ctr"
                 ? (Math.round(val * 100) / 100).toLocaleString()
                 : key === "cost_per_purchase"
-                ? `₹${Math.round(val).toLocaleString()}`
+                ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
+                : key === "total_spend"
+                ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
                 : Math.round(val).toLocaleString()}
             </p>
             <div className="mt-1 sm:mt-2 text-xs text-gray-700 dark:text-gray-200">
@@ -80,7 +86,7 @@ const PlatformSection = ({ platform, data }) => {
   );
 };
 
-const CombinedSection = ({ category, data }) => {
+const CombinedSection = ({ category, data, selectedAccount }) => {
   // Parse the category (e.g., "india_android" -> "India Android")
   const [country, platform] = category.split('_');
   const countryFlag = country === "india" ? "🇮🇳" : country === "us" ? "🇺🇸" : "🌍";
@@ -112,7 +118,9 @@ const CombinedSection = ({ category, data }) => {
               {key === "average_ctr"
                 ? (Math.round(val * 100) / 100).toLocaleString()
                 : key === "cost_per_purchase"
-                ? `₹${Math.round(val).toLocaleString()}`
+                ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
+                : key === "total_spend"
+                ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
                 : Math.round(val).toLocaleString()}
             </p>
             <div className="mt-1 sm:mt-2 text-xs text-gray-700 dark:text-gray-200">
@@ -125,7 +133,7 @@ const CombinedSection = ({ category, data }) => {
   );
 };
 
-const CompleteOverallSection = ({ data }) => {
+const CompleteOverallSection = ({ data, selectedAccount }) => {
   return (
     <div className="mb-8">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -151,7 +159,9 @@ const CompleteOverallSection = ({ data }) => {
               {key === "average_ctr"
                 ? (Math.round(val * 100) / 100).toLocaleString()
                 : key === "cost_per_purchase"
-                ? `₹${Math.round(val).toLocaleString()}`
+                ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
+                : key === "total_spend"
+                ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
                 : Math.round(val).toLocaleString()}
             </p>
             <div className="mt-1 sm:mt-2 text-xs text-gray-700 dark:text-gray-200">
@@ -164,7 +174,7 @@ const CompleteOverallSection = ({ data }) => {
   );
 };
 
-export default function OverviewCards({ overview }) {
+export default function OverviewCards({ overview, selectedAccount }) {
   if (!overview) {
     return null;
   }
@@ -181,7 +191,9 @@ export default function OverviewCards({ overview }) {
     // Check if this is a direct data object (has total_spend directly)
     if (overviewData.hasOwnProperty('total_spend')) {
       const directSpend = Number(overviewData.total_spend) || 0;
-      totalSpend += directSpend;
+      // Apply currency conversion for MMS_AF
+      const convertedSpend = parseFloat(directSpend || 0);
+      totalSpend += convertedSpend;
     }
     
     // Check all possible nested data sections and sum their total_spend
@@ -204,7 +216,10 @@ export default function OverviewCards({ overview }) {
     
     sections.forEach(section => {
       if (section && typeof section === 'object' && section.total_spend) {
-        totalSpend += Number(section.total_spend) || 0;
+        const sectionSpend = Number(section.total_spend) || 0;
+        // Apply currency conversion for MMS_AF
+        const convertedSpend = parseFloat(sectionSpend || 0);
+        totalSpend += convertedSpend;
       }
     });
     
@@ -229,31 +244,31 @@ export default function OverviewCards({ overview }) {
     return (
       <div className="mt-8">
         {overview.complete_overall && (
-          <CompleteOverallSection data={overview.complete_overall} />
+          <CompleteOverallSection data={overview.complete_overall} selectedAccount={selectedAccount} />
         )}
         {overview.india_android && (
-          <CombinedSection category="india_android" data={overview.india_android} />
+          <CombinedSection category="india_android" data={overview.india_android} selectedAccount={selectedAccount} />
         )}
         {overview.india_ios && (
-          <CombinedSection category="india_ios" data={overview.india_ios} />
+          <CombinedSection category="india_ios" data={overview.india_ios} selectedAccount={selectedAccount} />
         )}
         {overview.us_android && (
-          <CombinedSection category="us_android" data={overview.us_android} />
+          <CombinedSection category="us_android" data={overview.us_android} selectedAccount={selectedAccount} />
         )}
         {overview.us_ios && (
-          <CombinedSection category="us_ios" data={overview.us_ios} />
+          <CombinedSection category="us_ios" data={overview.us_ios} selectedAccount={selectedAccount} />
         )}
         {overview.india_overall && (
-          <CountrySection country="india" data={overview.india_overall} />
+          <CountrySection country="india" data={overview.india_overall} selectedAccount={selectedAccount} />
         )}
         {overview.us_overall && (
-          <CountrySection country="us" data={overview.us_overall} />
+          <CountrySection country="us" data={overview.us_overall} selectedAccount={selectedAccount} />
         )}
         {overview.android_overall && (
-          <PlatformSection platform="android" data={overview.android_overall} />
+          <PlatformSection platform="android" data={overview.android_overall} selectedAccount={selectedAccount} />
         )}
         {overview.ios_overall && (
-          <PlatformSection platform="ios" data={overview.ios_overall} />
+          <PlatformSection platform="ios" data={overview.ios_overall} selectedAccount={selectedAccount} />
         )}
       </div>
     );
@@ -266,10 +281,10 @@ export default function OverviewCards({ overview }) {
     return (
       <div className="mt-8">
         {overview.android && (
-          <PlatformSection platform="android" data={overview.android} />
+          <PlatformSection platform="android" data={overview.android} selectedAccount={selectedAccount} />
         )}
         {overview.ios && (
-          <PlatformSection platform="ios" data={overview.ios} />
+          <PlatformSection platform="ios" data={overview.ios} selectedAccount={selectedAccount} />
         )}
       </div>
     );
@@ -282,10 +297,10 @@ export default function OverviewCards({ overview }) {
     return (
       <div className="mt-8">
         {overview.india && (
-          <CountrySection country="india" data={overview.india} />
+          <CountrySection country="india" data={overview.india} selectedAccount={selectedAccount} />
         )}
         {overview.us && (
-          <CountrySection country="us" data={overview.us} />
+          <CountrySection country="us" data={overview.us} selectedAccount={selectedAccount} />
         )}
       </div>
     );
@@ -313,7 +328,9 @@ export default function OverviewCards({ overview }) {
             {key === "average_ctr"
               ? (Math.round(val * 100) / 100).toLocaleString()
               : key === "cost_per_purchase"
-              ? `₹${Math.round(val).toLocaleString()}`
+              ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
+              : key === "total_spend"
+              ? `₹${Math.round(parseFloat(val || 0)).toLocaleString()}`
               : Math.round(val).toLocaleString()}
           </p>
           <div className="mt-1 sm:mt-2 text-xs text-gray-700 dark:text-gray-200">

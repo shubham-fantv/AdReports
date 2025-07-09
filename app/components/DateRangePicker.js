@@ -15,7 +15,8 @@ export default function DateRangePicker({
   setActiveDailyRange,
   onDateRangeChange,
   onApplyDates,
-  onClearData
+  onClearData,
+  onAccountChange
 }) {
   
   const handleQuickDateRange = (days, rangeKey) => {
@@ -56,14 +57,17 @@ export default function DateRangePicker({
   };
 
   const handleAccountChange = (e) => {
-    setSelectedAccount(e.target.value);
+    const newAccount = e.target.value;
+    console.log(`Account changing from ${selectedAccount} to ${newAccount}`);
+    setSelectedAccount(newAccount);
     onClearData();
-    // Refetch data if there's an active date range
-    if (dailyStartDate && dailyEndDate) {
-      setTimeout(() => {
-        onDateRangeChange(dailyStartDate, dailyEndDate);
-      }, 100);
+    
+    // Pass the new account value to parent immediately to avoid race condition
+    if (onAccountChange) {
+      onAccountChange(newAccount);
     }
+    
+    // Note: Data refetch will be handled by useEffect in parent component
   };
 
   const handleLevelChange = (e) => {
@@ -89,6 +93,10 @@ export default function DateRangePicker({
           onChange={handleAccountChange}
           className="w-full sm:w-auto p-3 sm:p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-sm sm:text-base min-h-[44px] sm:min-h-[auto]"
         >
+          <option value="mms_af">MMS_AF</option>
+          <option value="lf_af">LF_AF</option>
+          <option value="videonation_af">VideoNation_AF</option>
+          <option value="photonation_af">PhotoNation_AF</option>
           <option value="default">VideoNation</option>
           <option value="mms">MMS</option>
         </select>

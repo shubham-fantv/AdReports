@@ -27,7 +27,10 @@ export default function AdsFilters({
             className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white text-sm sm:text-base min-h-[44px]"
           >
             <option value="default">VideoNation</option>
+            <option value="videonation_af">VideoNation_AF</option>
             <option value="mms">MMS</option>
+            <option value="mms_af">MMS_AF</option>
+            <option value="lf_af">LF_AF</option>
           </select>
         </div>
 
