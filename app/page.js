@@ -58,6 +58,14 @@ export default function Home() {
     const startDateStr = startDateParam || startDate;
     const endDateStr = endDateParam || endDate;
     
+    console.log("Fetching data with dates:", { startDateStr, endDateStr });
+    
+    if (!startDateStr || !endDateStr) {
+      console.error("Invalid dates:", { startDateStr, endDateStr });
+      setLoading(false);
+      return;
+    }
+    
     try {
       const promises = accounts.map(async (account) => {
         try {
@@ -124,14 +132,20 @@ export default function Home() {
       // L0 means today only
       rangeStartDate = today;
       rangeEndDate = today;
+    } else if (days === 1) {
+      // L1 means yesterday only
+      rangeStartDate = subDays(today, 1);
+      rangeEndDate = subDays(today, 1);
     } else {
-      // Calculate start date by subtracting days
+      // L7, L10, L30 means from X days ago to today
       rangeStartDate = subDays(today, days);
-      rangeEndDate = rangeStartDate; // Single day for L1, L7, etc.
+      rangeEndDate = today;
     }
     
     const startDateStr = formatDateString(rangeStartDate);
     const endDateStr = formatDateString(rangeEndDate);
+    
+    console.log(`Quick range ${rangeKey}: ${startDateStr} to ${endDateStr}`);
     
     setStartDate(startDateStr);
     setEndDate(endDateStr);
