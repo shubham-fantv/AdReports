@@ -385,7 +385,9 @@ export default function AdsPage() {
         // Extract purchases from actions
         let purchases = 0;
         if (ad.actions && Array.isArray(ad.actions)) {
-          const purchaseAction = ad.actions.find(action => action.action_type === 'purchase');
+          // For LF AF, use offsite_conversion.fb_pixel_custom instead of purchase
+          const actionType = selectedAccount === 'lf_af' ? 'offsite_conversion.fb_pixel_custom' : 'purchase';
+          const purchaseAction = ad.actions.find(action => action.action_type === actionType);
           if (purchaseAction) {
             purchases = parseInt(purchaseAction.value || 0);
           }

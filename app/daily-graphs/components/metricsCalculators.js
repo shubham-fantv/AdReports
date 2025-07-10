@@ -1,5 +1,6 @@
 // Metrics calculation utilities
 import { parseSpend } from "../../utils/currencyHelpers";
+import { getPurchaseValue } from "../../utils/dateHelpers";
 // Currency conversion is already handled in the API layer for MMS_AF
 // So we just need to parse the spend values here
 
@@ -7,7 +8,7 @@ export const calculateSummaryMetrics = (chartData, getActionValue, selectedAccou
   if (!chartData.length) return { totalSpend: 0, totalPurchases: 0, costPerPurchase: 0 };
   
   const totalSpend = chartData.reduce((sum, item) => sum + parseSpend(item.spend), 0);
-  const totalPurchases = chartData.reduce((sum, item) => sum + getActionValue(item.actions, 'purchase'), 0);
+  const totalPurchases = chartData.reduce((sum, item) => sum + getPurchaseValue(item.actions, selectedAccount), 0);
   const costPerPurchase = totalPurchases > 0 ? totalSpend / totalPurchases : 0;
   
   return { totalSpend, totalPurchases, costPerPurchase };
@@ -26,7 +27,7 @@ export const calculateMmsMetrics = (chartData, getActionValue, selectedAccount) 
   
   const totalSpend = chartData.reduce((sum, item) => sum + parseSpend(item.spend), 0);
   const totalPurchases = chartData.reduce((sum, item) => {
-    const purchases = getActionValue(item.actions, 'purchase');
+    const purchases = getPurchaseValue(item.actions, selectedAccount);
     console.log(`📦 MMS Purchase Debug - Date: ${item.date_start || item.date}, Purchases: ${purchases}, Actions:`, item.actions);
     return sum + purchases;
   }, 0);
@@ -34,7 +35,7 @@ export const calculateMmsMetrics = (chartData, getActionValue, selectedAccount) 
   console.log('📊 MMS calculateMmsMetrics - Total Purchases:', totalPurchases);
   
   // Calculate actual sales revenue using action_value from purchase actions
-  const totalSales = chartData.reduce((sum, item) => sum + getActionRevenue(item.actions, 'purchase'), 0);
+  const totalSales = chartData.reduce((sum, item) => sum + getActionRevenue(item.actions, 'purchase', selectedAccount), 0);
   
   // Fallback: If no action_value data, use hardcoded calculation (India purchases * 499)
   const fallbackSales = totalPurchases * 499;
@@ -75,9 +76,16 @@ export const getActionValue = (actions, actionType) => {
   return action ? parseInt(action.value || 0) : 0;
 };
 
-export const getActionRevenue = (actions, actionType) => {
+export const getActionRevenue = (actions, actionType, account) => {
   if (!actions || !Array.isArray(actions)) return 0;
-  const action = actions.find(a => a.action_type === actionType);
+  
+  // For LF AF, use offsite_conversion.fb_pixel_custom instead of purchase
+  let searchActionType = actionType;
+  if (account === "lf_af" && actionType === "purchase") {
+    searchActionType = "offsite_conversion.fb_pixel_custom";
+  }
+  
+  const action = actions.find(a => a.action_type === searchActionType);
   return action ? parseFloat(action.action_value || 0) : 0;
 };
 

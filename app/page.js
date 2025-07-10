@@ -1,11 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { formatCurrency } from "./utils/currencyHelpers";
-import { getActionValue, getISTDate, formatDateString } from "./utils/dateHelpers";
+import { getActionValue, getPurchaseValue, getISTDate, formatDateString } from "./utils/dateHelpers";
+import { Pie, Bar } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { subDays } from 'date-fns';
 import UnifiedHeader from './components/UnifiedHeader';
 import LoginForm from './components/LoginForm';
 import { useMobileMenu } from './contexts/MobileMenuContext';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 export default function Home() {
   // Authentication state
@@ -92,7 +96,7 @@ export default function Home() {
           
           if (result?.data?.campaigns?.[0]) {
             const data = result.data.campaigns[0];
-            const purchases = getActionValue(data.actions, "purchase");
+            const purchases = getPurchaseValue(data.actions, account.key);
             const spend = parseFloat(data.spend || 0);
             const costPerPurchase = purchases > 0 ? spend / purchases : 0;
             
@@ -447,7 +451,7 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl p-6">
+          <div className={`bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl p-6 transition-all duration-300 ${isProductDropdownOpen ? 'mt-24' : 'mt-8'}`}>
             <div className="flex items-center space-x-4">
               <div className="w-8 h-8 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin"></div>
               <div>
@@ -467,8 +471,8 @@ export default function Home() {
                       <span className="text-2xl">📊</span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-black dark:text-white">All Products Combined</h3>
-                      <p className="text-gray-600 dark:text-white/80 text-sm">Aggregated performance metrics</p>
+                      <h3 className="text-xl font-bold text-black dark:text-white">Overall Performance</h3>
+                      {/* <p className="text-gray-600 dark:text-white/80 text-sm">Aggregated performance metrics</p> */}
                     </div>
                   </div>
                 </div>
@@ -548,6 +552,132 @@ export default function Home() {
             ))}
           </div>
           </>
+        )}
+
+        {/* Charts Section */}
+        {!loading && accountsData.length > 0 && (
+          <div className="mt-8 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Spend Pie Chart */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Spend Distribution</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Advertising spend allocation across selected products</p>
+                </div>
+                <div className="h-64 sm:h-80">
+                  <Pie
+                    data={{
+                      labels: accountsData.map(account => account.account),
+                      datasets: [{
+                        data: accountsData.map(account => account.spend),
+                        backgroundColor: [
+                          '#3B82F6', // Blue
+                          '#10B981', // Emerald
+                          '#F59E0B', // Amber
+                          '#EF4444', // Red
+                          '#8B5CF6', // Violet
+                          '#06B6D4'  // Cyan
+                        ],
+                        borderColor: [
+                          '#2563EB',
+                          '#059669',
+                          '#D97706',
+                          '#DC2626',
+                          '#7C3AED',
+                          '#0891B2'
+                        ],
+                        borderWidth: 2
+                      }]
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: {
+                            color: '#6B7280', // Gray color that works in both themes
+                            padding: 20,
+                            usePointStyle: true
+                          }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              const label = context.label || '';
+                              const value = context.parsed;
+                              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                              const percentage = ((value / total) * 100).toFixed(1);
+                              return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Purchases Bar Chart */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Purchases by Product</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total purchases achieved across selected products</p>
+                </div>
+                <div className="h-64 sm:h-80">
+                  <Bar
+                    data={{
+                      labels: accountsData.map(account => account.account),
+                      datasets: [{
+                        label: 'Purchases',
+                        data: accountsData.map(account => account.purchases),
+                        backgroundColor: '#3B82F6',
+                        borderColor: '#2563EB',
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        borderSkipped: false
+                      }]
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          display: false
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              return `Purchases: ${context.parsed.y.toLocaleString()}`;
+                            }
+                          }
+                        }
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          ticks: {
+                            color: '#6B7280'
+                          },
+                          grid: {
+                            color: '#E5E7EB'
+                          }
+                        },
+                        x: {
+                          ticks: {
+                            color: '#6B7280'
+                          },
+                          grid: {
+                            color: '#E5E7EB'
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Refresh Button */}

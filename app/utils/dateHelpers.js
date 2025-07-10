@@ -51,3 +51,17 @@ export const getActionValue = (actions, actionType) => {
   const action = actions.find(a => a.action_type === actionType);
   return action ? parseInt(action.value || 0) : 0;
 };
+
+export const getPurchaseValue = (actions, account) => {
+  if (!actions || !Array.isArray(actions)) return 0;
+  
+  // For LF AF, use offsite_conversion.fb_pixel_custom instead of purchase
+  if (account === "lf_af") {
+    const action = actions.find(a => a.action_type === "offsite_conversion.fb_pixel_custom");
+    return action ? parseInt(action.value || 0) : 0;
+  }
+  
+  // For all other accounts, use purchase
+  const action = actions.find(a => a.action_type === "purchase");
+  return action ? parseInt(action.value || 0) : 0;
+};

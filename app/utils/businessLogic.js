@@ -1,4 +1,5 @@
-import { getActionValue } from "./dateHelpers";
+import { getActionValue, getPurchaseValue } from "./dateHelpers";
+import { parseSpend } from "./currencyHelpers";
 // Currency conversion is already handled in the API layer for MMS_AF
 // So we just need to parse the spend values here
 
@@ -239,7 +240,7 @@ export const calculateCustomOverview = (campaigns, selectedAccount = "default") 
     0
   );
   const totalPurchase = campaigns.reduce((sum, c) => {
-    return sum + getActionValue(c.actions, "purchase");
+    return sum + getPurchaseValue(c.actions, selectedAccount);
   }, 0);
 
   const averageCPC = totalClicks > 0 ? totalSpend / totalClicks : 0;
@@ -358,7 +359,7 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
     }
     
     if (isMmsAccount(selectedAccount)) {
-      const purchases = getActionValue(item.actions, "purchase");
+      const purchases = getPurchaseValue(item.actions, selectedAccount);
       const spend = parseSpend(item.spend);
       const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
       
@@ -373,11 +374,11 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
         Math.round((item.frequency || 0) * 100) / 100,
         costPerPurchase,
         getActionValue(item.actions, "mobile_app_install"),
-        getActionValue(item.actions, "purchase"),
+        getPurchaseValue(item.actions, selectedAccount),
         getActionValue(item.actions, "complete_registration")
       ]);
     } else {
-      const purchases = getActionValue(item.actions, "purchase");
+      const purchases = getPurchaseValue(item.actions, selectedAccount);
       const spend = parseSpend(item.spend);
       const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
       
@@ -392,7 +393,7 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
         Math.round((item.frequency || 0) * 100) / 100,
         costPerPurchase,
         getActionValue(item.actions, "add_to_cart"),
-        getActionValue(item.actions, "purchase"),
+        getPurchaseValue(item.actions, selectedAccount),
         getActionValue(item.actions, "initiate_checkout"),
         getActionValue(item.actions, "complete_registration")
       ]);
@@ -407,7 +408,7 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
     }
     
     if (isMmsAccount(selectedAccount)) {
-      const purchases = getActionValue(aggregateData.actions, "purchase");
+      const purchases = getPurchaseValue(aggregateData.actions, selectedAccount);
       const spend = parseSpend(aggregateData.spend);
       const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
       
@@ -422,11 +423,11 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
         Math.round((aggregateData.frequency || 0) * 100) / 100,
         costPerPurchase,
         getActionValue(aggregateData.actions, "mobile_app_install"),
-        getActionValue(aggregateData.actions, "purchase"),
+        getPurchaseValue(aggregateData.actions, selectedAccount),
         getActionValue(aggregateData.actions, "complete_registration")
       ]);
     } else {
-      const purchases = getActionValue(aggregateData.actions, "purchase");
+      const purchases = getPurchaseValue(aggregateData.actions, selectedAccount);
       const spend = parseFloat(aggregateData.spend || 0);
       const costPerPurchase = purchases > 0 ? Math.round(spend / purchases) : 0;
       
@@ -441,7 +442,7 @@ export const exportToCSV = (tableData, aggregateData, selectedAccount, selectedL
         Math.round((aggregateData.frequency || 0) * 100) / 100,
         costPerPurchase,
         getActionValue(aggregateData.actions, "add_to_cart"),
-        getActionValue(aggregateData.actions, "purchase"),
+        getPurchaseValue(aggregateData.actions, selectedAccount),
         getActionValue(aggregateData.actions, "initiate_checkout"),
         getActionValue(aggregateData.actions, "complete_registration")
       ]);
