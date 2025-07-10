@@ -6,13 +6,14 @@ import AdsHeader from './components/AdsHeader';
 import AdsFilters from './components/AdsFilters';
 import LoadingState from './components/LoadingState';
 import AdsTable from './components/AdsTable';
+import AdsAggregateCards from './components/AdsAggregateCards';
 
 export default function AdsPage() {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Filter state
-  const [selectedAccount, setSelectedAccount] = useState("default");
+  const [selectedAccount, setSelectedAccount] = useState("mms_af");
   const [dailyStartDate, setDailyStartDate] = useState("");
   const [dailyEndDate, setDailyEndDate] = useState("");
   const [activeRange, setActiveRange] = useState("L7");
@@ -51,6 +52,14 @@ export default function AdsPage() {
     }
   }, [isAuthenticated]);
 
+  // Watch for account changes and refetch data
+  useEffect(() => {
+    if (isAuthenticated && dailyStartDate && dailyEndDate) {
+      console.log(`Account changed to: ${selectedAccount}, refetching ads data`);
+      fetchAdsData();
+    }
+  }, [selectedAccount]);
+
   const handleQuickDateRange = (days, rangeKey) => {
     // Get current date in IST
     const now = new Date();
@@ -78,11 +87,12 @@ export default function AdsPage() {
     fetchAdsData(startDate, endDate);
   };
 
-  const fetchAdsData = async (startDate = null, endDate = null) => {
+  const fetchAdsData = async (startDate = null, endDate = null, account = null) => {
     setLoading(true);
     
     const startDateStr = startDate || dailyStartDate;
     const endDateStr = endDate || dailyEndDate;
+    const accountToUse = account || selectedAccount;
     
     if (!startDateStr || !endDateStr) {
       console.error("Invalid dates:", { startDateStr, endDateStr });
@@ -101,7 +111,7 @@ export default function AdsPage() {
       }
       
       console.log(`📅 Step 1: Making parallel API calls for ad performance data for dates: ${dateArray.join(', ')}`);
-      console.log(`🔍 Selected Account for API calls: ${selectedAccount}`);
+      console.log(`🔍 Selected Account for API calls: ${accountToUse}`);
       
       // Step 1: Get Ad Performance for each date with per_day=false
       const performancePromises = dateArray.map(date => {
@@ -109,12 +119,12 @@ export default function AdsPage() {
           start_date: date,
           end_date: date,
           per_day: "false",
-          account: selectedAccount,
+          account: accountToUse,
           level: "ad",
           fields: "ad_id,ad_name,impressions,clicks,spend,ctr,cpc,actions"
         });
         
-        console.log(`🔗 Performance API URL for ${date} (Account: ${selectedAccount}): /api/daily-reports?${params.toString()}`);
+        console.log(`🔗 Performance API URL for ${date} (Account: ${accountToUse}): /api/daily-reports?${params.toString()}`);
         return fetch(`/api/daily-reports?${params}`).then(res => res.json());
       });
       
@@ -149,9 +159,9 @@ export default function AdsPage() {
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Ad ID goes in the API path, not as a parameter
-        const url = `/api/facebook-graph/${adId}?account=${selectedAccount}&fields=adcreatives{id,name,object_story_spec,asset_feed_spec,effective_object_story_id}`;
+        const url = `/api/facebook-graph/${adId}?account=${accountToUse}&fields=adcreatives{id,name,object_story_spec,asset_feed_spec,effective_object_story_id}`;
         
-        console.log(`🎨 Creative API URL for ad ${adId} (Account: ${selectedAccount}): ${url}`);
+        console.log(`🎨 Creative API URL for ad ${adId} (Account: ${accountToUse}): ${url}`);
         try {
           const response = await fetch(url);
           const result = await response.json();
@@ -165,7 +175,7 @@ export default function AdsPage() {
             if (creativeData.object_story_spec?.video_data?.video_id) {
               const videoId = creativeData.object_story_spec.video_data.video_id;
               try {
-                const mediaResponse = await fetch(`/api/facebook-media/${videoId}?account=${selectedAccount}&type=video`);
+                const mediaResponse = await fetch(`/api/facebook-media/${videoId}?account=${accountToUse}&type=video`);
                 const mediaResult = await mediaResponse.json();
                 if (mediaResult?.data?.source) {
                   mediaUrls.videoSource = mediaResult.data.source;
@@ -180,10 +190,17 @@ export default function AdsPage() {
               const video = creativeData.asset_feed_spec.videos[0];
               if (video.video_id) {
                 try {
-                  const mediaResponse = await fetch(`/api/facebook-media/${video.video_id}?account=${selectedAccount}&type=video`);
+                  const mediaResponse = await fetch(`/api/facebook-media/${video.video_id}?account=${accountToUse}&type=video`);
                   const mediaResult = await mediaResponse.json();
+                  
+                  console.log(`DPA Video fetch result for ${video.video_id} on account ${accountToUse}:`, mediaResult);
+                  
+                  // If successful, use the video source
                   if (mediaResult?.data?.source) {
                     mediaUrls.videoSource = mediaResult.data.source;
+                    console.log(`✅ DPA Video source found for ${video.video_id}:`, mediaResult.data.source);
+                  } else {
+                    console.warn(`❌ No video source found for ${video.video_id} on account ${accountToUse}`, mediaResult);
                   }
                 } catch (error) {
                   console.error(`Error fetching DPA video source for ${video.video_id}:`, error);
@@ -194,7 +211,7 @@ export default function AdsPage() {
             // Check for effective_object_story_id for DPA image attachments
             if (creativeData.effective_object_story_id) {
               try {
-                const postResponse = await fetch(`/api/facebook-post/${creativeData.effective_object_story_id}?account=${selectedAccount}`);
+                const postResponse = await fetch(`/api/facebook-post/${creativeData.effective_object_story_id}?account=${accountToUse}`);
                 const postResult = await postResponse.json();
                 if (postResult?.data?.attachments?.data?.[0]?.media?.image?.src) {
                   mediaUrls.imageSource = postResult.data.attachments.data[0].media.image.src;
@@ -251,7 +268,7 @@ export default function AdsPage() {
           creativeLink = linkData.link || 'N/A';
           assetType = linkData.image_hash ? 'Image Ad' : 'Link Ad';
           if (linkData.image_hash) {
-            assetLink = `/api/facebook-media/${linkData.image_hash}?account=${selectedAccount}&type=image`;
+            assetLink = `/api/facebook-media/${linkData.image_hash}?account=${accountToUse}&type=image`;
           }
         } else if (videoData) {
           // For video ads - use the creative name and extract description from other fields
@@ -265,7 +282,7 @@ export default function AdsPage() {
             assetLink = mediaUrls.videoSource;
             videoUrl = mediaUrls.videoSource;
           } else if (videoData.video_id) {
-            assetLink = `/api/facebook-media/${videoData.video_id}?account=${selectedAccount}&type=video`;
+            assetLink = `/api/facebook-media/${videoData.video_id}?account=${accountToUse}&type=video`;
           }
           
           if (videoData.image_url) {
@@ -303,8 +320,9 @@ export default function AdsPage() {
               assetLink = mediaUrls.videoSource;
               videoUrl = mediaUrls.videoSource;
             } else if (video.video_id) {
-              assetLink = `/api/facebook-media/${video.video_id}?account=${selectedAccount}&type=video`;
-              videoUrl = `/api/facebook-media/${video.video_id}?account=${selectedAccount}&type=video`;
+              // If we couldn't fetch the video source, provide fallback API link
+              assetLink = `/api/facebook-media/${video.video_id}?account=${accountToUse}&type=video`;
+              videoUrl = `/api/facebook-media/${video.video_id}?account=${accountToUse}&type=video`;
             }
             
             if (video.thumbnail_url) {
@@ -422,11 +440,12 @@ export default function AdsPage() {
   };
 
   const handleAccountChange = (e) => {
-    setSelectedAccount(e.target.value);
+    const newAccount = e.target.value;
+    setSelectedAccount(newAccount);
     setAdsData([]);
-    // Re-fetch data with new account
+    // Re-fetch data with new account - pass the new account value directly
     if (dailyStartDate && dailyEndDate) {
-      fetchAdsData();
+      fetchAdsData(null, null, newAccount);
     }
   };
 
@@ -453,7 +472,12 @@ export default function AdsPage() {
 
         {loading && <LoadingState />}
 
-        {!loading && <AdsTable adsData={adsData} selectedAccount={selectedAccount} />}
+        {!loading && (
+          <>
+            <AdsAggregateCards adsData={adsData} selectedAccount={selectedAccount} />
+            <AdsTable adsData={adsData} selectedAccount={selectedAccount} />
+          </>
+        )}
       </main>
     </div>
   );

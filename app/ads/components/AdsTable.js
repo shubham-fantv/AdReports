@@ -308,7 +308,7 @@ export default function AdsTable({ adsData, selectedAccount }) {
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs">
                   <div className="truncate" title={ad.assetLink}>
-                    {ad.assetLink !== 'N/A' ? (
+                    {ad.assetLink !== 'N/A' && ad.assetLink ? (
                       <a 
                         href={ad.assetLink} 
                         target="_blank" 
@@ -318,7 +318,12 @@ export default function AdsTable({ adsData, selectedAccount }) {
                         <span>{ad.assetType === 'Video Ad' || ad.assetType === 'DPA Video' ? '🎬' : '🖼️'}</span>
                         <span>View Asset</span>
                       </a>
-                    ) : 'N/A'}
+                    ) : (
+                      <span className="text-gray-500 dark:text-gray-400 flex items-center space-x-1">
+                        <span>{ad.assetType === 'Video Ad' || ad.assetType === 'DPA Video' ? '🎬' : '🖼️'}</span>
+                        <span>N/A</span>
+                      </span>
+                    )}
                   </div>
                 </td>
                 {!hiddenColumns.dateRange && (

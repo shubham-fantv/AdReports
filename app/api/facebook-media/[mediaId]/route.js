@@ -18,11 +18,13 @@ export async function GET(req, { params }) {
     ? process.env.FACEBOOK_LF_ACCESS_TOKEN_AF
     : account === "videonation_af"
     ? process.env.FACEBOOK_ACCESS_TOKEN_VIDEONATION_AF
+    : account === "photonation_af"
+    ? process.env.FACEBOOK_ACCESS_TOKEN_PHOTONATIONN_AF
     : process.env.FACEBOOK_ACCESS_TOKEN_VIDEONATION;
   
   // Validate credentials exist
   if (!accessToken) {
-    const accountType = account === "mms" ? "MMS" : account === "mms_af" ? "MMS_AF" : account === "lf_af" ? "LF_AF" : account === "videonation_af" ? "VideoNation_AF" : "VideoNation";
+    const accountType = account === "mms" ? "MMS" : account === "mms_af" ? "MMS_AF" : account === "lf_af" ? "LF_AF" : account === "videonation_af" ? "VideoNation_AF" : account === "photonation_af" ? "PhotoNation_AF" : "VideoNation";
     return new Response(
       JSON.stringify({ 
         error: `Missing ${accountType} access token. Please check environment variables.` 
@@ -59,7 +61,7 @@ export async function GET(req, { params }) {
       },
     });
   } catch (error) {
-    const accountType = account === "mms" ? "MMS" : account === "mms_af" ? "MMS_AF" : account === "lf_af" ? "LF_AF" : account === "videonation_af" ? "VideoNation_AF" : "VideoNation";
+    const accountType = account === "mms" ? "MMS" : account === "mms_af" ? "MMS_AF" : account === "lf_af" ? "LF_AF" : account === "videonation_af" ? "VideoNation_AF" : account === "photonation_af" ? "PhotoNation_AF" : "VideoNation";
     console.error(`Error fetching ${mediaType} data for ${mediaId} (${accountType}):`, error.message);
     console.error(`Error details:`, error.response?.data || error);
     

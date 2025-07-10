@@ -5,7 +5,7 @@ import { format, subDays } from 'date-fns';
 import ThemeToggle from '../../components/ThemeToggle';
 import { useMobileMenu } from '../../contexts/MobileMenuContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { formatCurrency } from '../../utils/currencyHelpers';
+import { formatCurrency, parseSpend } from '../../utils/currencyHelpers';
 
 // Helper function to check if account is MMS-type (mms or mms_af) or LF-type (lf_af)
 const isMmsAccount = (account) => account === "mms" || account === "mms_af" || account === "lf_af";
@@ -155,7 +155,7 @@ export default function DailyGraphsPage() {
         date: item.date_start || item.date,
         purchasesOldMethod: item.actions?.find(a => a.action_type === 'purchase')?.value || 0,
         purchasesCorrectMethod: getActionValue(item.actions, 'purchase'),
-        spend: parseFloat(item.spend || 0),
+        spend: parseSpend(item.spend),
         clicks: parseInt(item.clicks || 0),
         actions: item.actions,
         // Check for revenue data in different possible locations
@@ -273,7 +273,7 @@ export default function DailyGraphsPage() {
       ? "VideoNation_AF (AI video/image generation web platform with AED currency)"
       : "VideoNation (AI video/image generation web platform with subscription model)";
     
-    const totalSpend = data.reduce((sum, item) => sum + parseFloat(item.spend || 0), 0);
+    const totalSpend = data.reduce((sum, item) => sum + parseSpend(item.spend), 0);
     const totalImpressions = data.reduce((sum, item) => sum + parseFloat(item.impressions || 0), 0);
     const totalClicks = data.reduce((sum, item) => sum + parseFloat(item.clicks || 0), 0);
     const avgCTR = data.reduce((sum, item) => sum + parseFloat(item.ctr || 0), 0) / data.length;
