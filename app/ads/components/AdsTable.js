@@ -173,7 +173,7 @@ export default function AdsTable({ adsData, selectedAccount }) {
                   Ad ID
                 </th>
               )}
-              <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" style={{width: '256px', minWidth: '256px'}}>
+              <th className="sticky left-0 z-10 px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-64 min-w-64 max-w-xs bg-gray-50 dark:bg-[#2a2a2a] border-r border-gray-300 dark:border-gray-600">
                 Ad Name
               </th>
               <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -238,9 +238,9 @@ export default function AdsTable({ adsData, selectedAccount }) {
                     {ad.ad_id}
                   </td>
                 )}
-                <td className="px-6 py-4 text-sm text-gray-900 dark:text-white" style={{width: '256px', minWidth: '256px'}}>
-                  <div className="truncate" title={ad.ad_name}>
-                    <span className="font-medium">{ad.ad_name || 'N/A'}</span>
+                <td className="sticky left-0 z-10 px-6 py-4 text-sm text-gray-900 dark:text-white w-64 min-w-64 max-w-xs bg-white dark:bg-[#1a1a1a] border-r border-gray-200 dark:border-[#2a2a2a]">
+                  <div className="break-words" title={ad.ad_name}>
+                    <span className="font-medium leading-tight">{ad.ad_name || 'N/A'}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">

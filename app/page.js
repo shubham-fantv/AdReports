@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { formatCurrency } from "./utils/currencyHelpers";
 import { getActionValue, getISTDate, formatDateString } from "./utils/dateHelpers";
 import { subDays } from 'date-fns';
-import ThemeToggle from './components/ThemeToggle';
+import UnifiedHeader from './components/UnifiedHeader';
 import LoginForm from './components/LoginForm';
 import { useMobileMenu } from './contexts/MobileMenuContext';
 
@@ -18,6 +18,10 @@ export default function Home() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [activeRange, setActiveRange] = useState("L1");
+  
+  // Product filter state
+  const [selectedProducts, setSelectedProducts] = useState(["lf_af", "photonation_af", "mms_af"]);
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
 
   // Mobile menu state from context
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useMobileMenu();
@@ -49,8 +53,11 @@ export default function Home() {
 
   const accounts = [
     { key: "mms_af", name: "MMS AF" },
+    { key: "mms", name: "MMS" },
     { key: "lf_af", name: "LF AF" },
-    { key: "photonation_af", name: "PhotoNation AF" }
+    { key: "photonation_af", name: "PhotoNation AF" },
+    { key: "videonation_af", name: "VideoNation AF" },
+    { key: "default", name: "VideoNation" }
   ];
 
   const fetchAllAccountsData = async (startDateParam = null, endDateParam = null) => {
@@ -67,7 +74,9 @@ export default function Home() {
     }
     
     try {
-      const promises = accounts.map(async (account) => {
+      // Filter accounts based on selected products
+      const filteredAccounts = accounts.filter(account => selectedProducts.includes(account.key));
+      const promises = filteredAccounts.map(async (account) => {
         try {
           const params = new URLSearchParams({
             start_date: startDateStr,
@@ -169,12 +178,64 @@ export default function Home() {
     setAccountsData([]);
   };
 
+  const handleProductChange = (productKey) => {
+    setSelectedProducts(prev => {
+      if (prev.includes(productKey)) {
+        return prev.filter(p => p !== productKey);
+      } else {
+        return [...prev, productKey];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProducts.length === accounts.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(accounts.map(account => account.key));
+    }
+  };
+
+  // Re-fetch data when selected products change
+  useEffect(() => {
+    if (isAuthenticated && startDate && endDate) {
+      fetchAllAccountsData();
+    }
+  }, [selectedProducts]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isProductDropdownOpen && !event.target.closest('.product-dropdown')) {
+        setIsProductDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isProductDropdownOpen]);
+
+  // Auto-hide dropdown after 7 seconds
+  useEffect(() => {
+    let timer;
+    if (isProductDropdownOpen) {
+      timer = setTimeout(() => {
+        setIsProductDropdownOpen(false);
+      }, 7000);
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [isProductDropdownOpen]);
+
   // Show login form if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-[#0a0a0a] flex items-center justify-center px-4 transition-colors duration-300">
         <div className="absolute top-4 right-4">
-          <ThemeToggle />
         </div>
         <LoginForm onLoginSuccess={handleLogin} />
       </div>
@@ -183,69 +244,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-[#0a0a0a] transition-colors duration-300">
-      {/* Header */}
-      <header className="bg-white/80 dark:bg-[#1a1a1a]/95 backdrop-blur-xl border-b border-white/20 dark:border-[#2a2a2a] shadow-lg shadow-purple-500/10 dark:shadow-black/20 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            {/* Left: Logo and Title */}
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-base sm:text-lg">📊</span>
-              </div>
-              <div>
-                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Executive Dashboard</h1>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-[#a0a0a0] hidden sm:block">Performance Overview</p>
-              </div>
-            </div>
-
-            {/* Right: Navigation and Actions */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              {/* Mobile Hamburger Menu */}
-              <div className="relative sm:hidden">
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-                  aria-label="Open sidebar"
-                >
-                  <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Desktop Navigation */}
-              <nav className="hidden sm:flex items-center space-x-2">
-                <a
-                  href="/dashboard"
-                  className="px-3 lg:px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 hover:from-purple-700 hover:to-pink-700 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-purple-500/20 dark:shadow-blue-500/20 text-sm lg:text-base"
-                >
-                  <span>📈</span>
-                  <span>Dashboard</span>
-                </a>
-                <a
-                  href="/daily-graphs"
-                  className="px-3 lg:px-4 py-2 bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-600 dark:to-blue-600 hover:from-green-700 hover:to-blue-700 dark:hover:from-green-700 dark:hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-green-500/20 dark:shadow-blue-500/20 text-sm lg:text-base"
-                >
-                  <span>📊</span>
-                  <span>Daily Graphs</span>
-                </a>
-              </nav>
-
-              {/* Theme Toggle */}
-              <ThemeToggle />
-
-              {/* Logout Button */}
-              <button
-                onClick={handleLogout}
-                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm flex items-center space-x-1"
-              >
-                <span className="hidden sm:inline">Logout</span>
-                <span className="sm:hidden">🚪</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <UnifiedHeader title="Executive Dashboard" icon="📊" currentPage="home" />
 
       {/* Mobile Sidebar */}
       <div className={`fixed inset-0 z-50 sm:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
@@ -314,21 +313,73 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Page Title */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Executive Overview
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-            Performance metrics across all accounts
-          </p>
-        </div>
 
-        {/* Date Range Picker */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-wrap sm:items-end sm:gap-6">
+        {/* Filters */}
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-4 sm:p-6 mb-6 sm:mb-8 overflow-visible">
+          <div className="space-y-6 overflow-visible">
+            {/* Date Range Picker */}
+            <div className="flex flex-col lg:flex-row lg:items-end gap-4 lg:gap-6 overflow-visible">
+            {/* Product Selection Dropdown */}
+            <div className="flex-shrink-0 relative product-dropdown">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                Products
+              </label>
+              <div className="relative">
+                <button
+                  onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
+                  className="w-full min-w-[180px] lg:w-48 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-sm flex items-center justify-between h-[42px]"
+                >
+                  <span>
+                    {selectedProducts.length === accounts.length 
+                      ? 'All Products' 
+                      : selectedProducts.length === 1 
+                        ? accounts.find(acc => acc.key === selectedProducts[0])?.name
+                        : `${selectedProducts.length} Products`
+                    }
+                  </span>
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${isProductDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {isProductDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-8 p-3 bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#2a2a2a] rounded-lg shadow-lg min-w-[1000px] max-w-none">
+                    {/* All options in one row - no wrap */}
+                    <div className="flex items-center gap-4 whitespace-nowrap">
+                      {/* Select All Option */}
+                      <label className="flex items-center space-x-2 p-2 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-md cursor-pointer flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedProducts.length === accounts.length}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">Select All</span>
+                      </label>
+                      
+                      {/* Separator */}
+                      <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
+                      
+                      {/* Individual Product Options - All in one row */}
+                      {accounts.map((account) => (
+                        <label key={account.key} className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md cursor-pointer flex-shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.includes(account.key)}
+                            onChange={() => handleProductChange(account.key)}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{account.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
             {/* Quick Date Range Buttons */}
-            <div className="sm:flex-shrink-0">
+            <div className="flex-shrink-0">
               <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
                 Quick Ranges
               </label>
@@ -343,7 +394,7 @@ export default function Home() {
                   <button
                     key={range.key}
                     onClick={() => handleQuickDateRange(range.days, range.key)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px] sm:min-h-[auto] flex-shrink-0 ${
+                    className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 h-[42px] flex-shrink-0 ${
                       activeRange === range.key
                         ? "bg-blue-600 text-white shadow-md"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -356,41 +407,42 @@ export default function Home() {
             </div>
 
             {/* Custom Date Range */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-end lg:gap-3 gap-4 lg:flex-nowrap">
-              <div className="lg:flex-shrink-0">
-                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full lg:w-36 p-3 sm:p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] text-sm sm:text-base min-h-[44px] sm:min-h-[auto]"
-                />
-              </div>
-              <div className="lg:flex-shrink-0">
-                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
-                  End Date
-                </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full lg:w-36 p-3 sm:p-2 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] text-sm sm:text-base min-h-[44px] sm:min-h-[auto]"
-                />
-              </div>
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 lg:flex-shrink-0">
-                <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2 lg:opacity-0">
-                  Apply
-                </label>
-                <button
-                  onClick={handleApplyCustomDates}
-                  className="w-full lg:w-auto px-4 py-3 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base min-h-[44px] sm:min-h-[auto]"
-                >
-                  Apply
-                </button>
-              </div>
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full lg:w-40 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] text-sm h-[42px]"
+              />
             </div>
+            
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full lg:w-40 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-[#2a2a2a] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] text-sm h-[42px]"
+              />
+            </div>
+            
+            <div className="flex-shrink-0">
+              <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2 lg:opacity-0">
+                Apply
+              </label>
+              <button
+                onClick={handleApplyCustomDates}
+                className="w-full lg:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm h-[42px]"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -405,7 +457,62 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <>
+            {/* Aggregate Card */}
+            {accountsData.length > 0 && (
+              <div className={`bg-white dark:bg-gradient-to-r dark:from-slate-700 dark:to-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-600 p-6 mb-8 transition-all duration-300 ${isProductDropdownOpen ? 'mt-24' : 'mt-8'}`}>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-white/10 rounded-xl flex items-center justify-center">
+                      <span className="text-2xl">📊</span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-black dark:text-white">All Products Combined</h3>
+                      <p className="text-gray-600 dark:text-white/80 text-sm">Aggregated performance metrics</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-gray-50 dark:bg-white/10 rounded-lg p-4 border border-gray-200 dark:border-white/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-700 dark:text-white/80 text-sm font-medium">Total Spend</span>
+                      <span className="text-gray-500 dark:text-white/60">💳</span>
+                    </div>
+                    <p className="text-2xl font-bold text-black dark:text-white">
+                      {formatCurrency(accountsData.reduce((sum, account) => sum + account.spend, 0))}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-white/10 rounded-lg p-4 border border-gray-200 dark:border-white/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-700 dark:text-white/80 text-sm font-medium">Total Purchases</span>
+                      <span className="text-gray-500 dark:text-white/60">🛒</span>
+                    </div>
+                    <p className="text-2xl font-bold text-black dark:text-white">
+                      {accountsData.reduce((sum, account) => sum + account.purchases, 0).toLocaleString()}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-white/10 rounded-lg p-4 border border-gray-200 dark:border-white/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-700 dark:text-white/80 text-sm font-medium">Avg Cost per Purchase</span>
+                      <span className="text-gray-500 dark:text-white/60">🎯</span>
+                    </div>
+                    <p className="text-2xl font-bold text-black dark:text-white">
+                      {(() => {
+                        const totalSpend = accountsData.reduce((sum, account) => sum + account.spend, 0);
+                        const totalPurchases = accountsData.reduce((sum, account) => sum + account.purchases, 0);
+                        return totalPurchases > 0 ? formatCurrency(totalSpend / totalPurchases) : '₹0';
+                      })()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Individual Product Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {accountsData.map((account, index) => (
               <div key={index} className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-6 hover:shadow-lg transition-shadow duration-200">
                 <div className="flex items-center justify-between mb-4">
@@ -440,6 +547,7 @@ export default function Home() {
               </div>
             ))}
           </div>
+          </>
         )}
 
         {/* Refresh Button */}

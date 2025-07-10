@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Line, Bar } from "react-chartjs-2";
 import { format, subDays } from 'date-fns';
-import ThemeToggle from '../../components/ThemeToggle';
+import UnifiedHeader from '../../components/UnifiedHeader';
 import { useMobileMenu } from '../../contexts/MobileMenuContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { formatCurrency, parseSpend } from '../../utils/currencyHelpers';
@@ -402,52 +402,7 @@ ${priorityActions.length > 0 ? '**Patterns Identified:**\n' + priorityActions.sl
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-[#0a0a0a] transition-colors duration-300">
-      {/* Header */}
-      <header className="bg-white/80 dark:bg-[#1a1a1a]/95 backdrop-blur-xl border-b border-white/20 dark:border-[#2a2a2a] shadow-lg shadow-purple-500/10 dark:shadow-black/20 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            {/* Left: Logo and Title */}
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-blue-600 dark:to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-base sm:text-lg">📈</span>
-              </div>
-              <div>
-                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Daily Analytics</h1>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-[#a0a0a0] hidden sm:block">Comprehensive performance insights</p>
-              </div>
-            </div>
-
-            {/* Right: Navigation and Actions */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              {/* Mobile Sidebar Toggle */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 sm:hidden"
-                aria-label="Open sidebar"
-              >
-                <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-
-              {/* Desktop Navigation */}
-              <nav className="hidden sm:flex items-center space-x-2">
-                <button
-                  onClick={() => (window.location.href = "/")}
-                  className="px-3 lg:px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-purple-500/20 dark:shadow-blue-500/20 text-sm lg:text-base"
-                >
-                  <span>←</span>
-                  <span>Dashboard</span>
-                </button>
-              </nav>
-
-              {/* Theme Toggle */}
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-
-      </header>
+      <UnifiedHeader title="Daily Analytics" icon="📈" currentPage="daily-graphs" />
 
       {/* Mobile Sidebar */}
       <div className={`fixed inset-0 z-50 sm:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`}>

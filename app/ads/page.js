@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { getTodayIST, getISTDate, formatDateString } from "../utils/dateHelpers";
 import { subDays } from 'date-fns';
-import AdsHeader from './components/AdsHeader';
+import UnifiedHeader from '../components/UnifiedHeader';
 import AdsFilters from './components/AdsFilters';
 import LoadingState from './components/LoadingState';
 import AdsTable from './components/AdsTable';
@@ -455,7 +455,7 @@ export default function AdsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-[#0a0a0a] transition-colors duration-300">
-      <AdsHeader />
+      <UnifiedHeader title="Ads Data" icon="📢" currentPage="ads" />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <AdsFilters
