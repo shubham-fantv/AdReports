@@ -18,7 +18,8 @@ export default function UnifiedHeader({
     { key: 'home', href: '/', label: 'Home', icon: '🏠' },
     { key: 'dashboard', href: '/dashboard', label: 'Dashboard', icon: '📊' },
     { key: 'daily-graphs', href: '/daily-graphs', label: 'Graphs', icon: '📈' },
-    { key: 'ads', href: '/ads', label: 'Ads', icon: '📢' }
+    { key: 'ads', href: '/ads', label: 'Ads', icon: '📢' },
+    { key: 'reports', href: '/reports', label: 'Reports', icon: '📋' }
   ];
 
   return (

@@ -6,7 +6,7 @@ import UnifiedHeader from '../components/UnifiedHeader';
 import AdsFilters from './components/AdsFilters';
 import LoadingState from './components/LoadingState';
 import AdsTable from './components/AdsTable';
-import AdsAggregateCards from './components/AdsAggregateCards';
+import AIInsights from './components/AIInsights';
 
 export default function AdsPage() {
   // Authentication state
@@ -476,7 +476,7 @@ export default function AdsPage() {
 
         {!loading && (
           <>
-            <AdsAggregateCards adsData={adsData} selectedAccount={selectedAccount} />
+            <AIInsights adsData={adsData} selectedAccount={selectedAccount} />
             <AdsTable adsData={adsData} selectedAccount={selectedAccount} />
           </>
         )}

@@ -686,8 +686,8 @@ export const DeviceBreakdownTable = ({ deviceData, getActionValue, theme }) => {
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Performance metrics across different device platforms</p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px]">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+          <table className="w-full min-w-[700px]">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
                 <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Device Platform</th>
@@ -1017,8 +1017,8 @@ export const PlacementBreakdownChart = ({ placementData, theme }) => {
       </div>
       
       {/* Summary table */}
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="mt-6 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+        <table className="w-full text-sm min-w-[700px]">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700">
               <th className="py-3 px-4 text-left font-semibold text-gray-900 dark:text-white">Placement</th>

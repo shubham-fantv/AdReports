@@ -46,8 +46,8 @@ export default function DataTable({
         </div>
       </div>
       
-      <div className="overflow-x-auto scrollbar-thin">
-        <table className="w-full relative min-w-[800px]">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+        <table className="w-full relative min-w-[1000px]">
           <thead className="bg-gray-50 dark:bg-[#0f0f0f]">
             <tr>
               <th className="sticky left-0 z-10 px-3 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wider w-32 bg-gray-50 dark:bg-[#0f0f0f] border-r border-gray-200 dark:border-gray-700">Date</th>

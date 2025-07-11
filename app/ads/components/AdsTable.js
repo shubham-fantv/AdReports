@@ -69,7 +69,7 @@ export default function AdsTable({ adsData, selectedAccount }) {
           </div>
           
           {/* Column Visibility Filter */}
-          <div className="relative">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center space-x-1 sm:space-x-2 flex-wrap text-xs sm:text-sm">
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hidden sm:inline">Show/Hide:</span>
               
@@ -160,6 +160,15 @@ export default function AdsTable({ adsData, selectedAccount }) {
                 <span>Days Active</span>
               </button>
             </div>
+            
+            {/* Export CSV Button - Positioned at extreme top right */}
+            <button
+              onClick={() => exportToCSV(adsData, selectedAccount)}
+              className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg text-sm whitespace-nowrap"
+            >
+              <span>📊</span>
+              <span>Export CSV</span>
+            </button>
           </div>
         </div>
       </div>
@@ -346,3 +355,82 @@ export default function AdsTable({ adsData, selectedAccount }) {
     </div>
   );
 }
+
+// Export to CSV function
+const exportToCSV = (adsData, selectedAccount) => {
+  if (!adsData.length) {
+    alert("No data to export");
+    return;
+  }
+
+  // Prepare CSV data
+  const csvData = [];
+  
+  // Add header row
+  const headers = [
+    "Ad ID",
+    "Ad Name", 
+    "Impressions",
+    "Clicks",
+    "Spend",
+    "CTR (%)",
+    "CPC (₹)",
+    "Purchases",
+    "Cost per Purchase (₹)",
+    "Description",
+    "Link",
+    "Creative Name",
+    "Date Range",
+    "Days Active"
+  ];
+  
+  csvData.push(headers);
+  
+  // Add data rows
+  adsData.forEach(ad => {
+    const purchases = ad.purchases || 0;
+    const spend = parseFloat(ad.spend || 0);
+    const costPerPurchase = purchases > 0 ? spend / purchases : 0;
+    
+    const row = [
+      ad.ad_id || 'N/A',
+      ad.ad_name || 'N/A',
+      parseInt(ad.impressions || 0).toLocaleString(),
+      parseInt(ad.clicks || 0).toLocaleString(),
+      `₹${spend.toFixed(2)}`,
+      `${parseFloat(ad.ctr || 0).toFixed(2)}%`,
+      `₹${parseFloat(ad.cpc || 0).toFixed(2)}`,
+      purchases.toLocaleString(),
+      `₹${costPerPurchase.toFixed(2)}`,
+      ad.description || 'N/A',
+      ad.link || 'N/A',
+      ad.creative_name || 'N/A',
+      ad.date || 'N/A',
+      `${ad.daysActive || 0} days`
+    ];
+    
+    csvData.push(row);
+  });
+  
+  // Convert to CSV string
+  const csvString = csvData.map(row => 
+    row.map(field => `"${field}"`).join(",")
+  ).join("\n");
+
+  // Create and download file
+  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  
+  // Create filename with account and timestamp
+  const accountName = selectedAccount === "default" ? "VideoNation" : 
+                      selectedAccount === "videonation_af" ? "VideoNation_AF" : "MMS";
+  const timestamp = new Date().toISOString().split('T')[0];
+  link.setAttribute("download", `ads-data-${accountName}-${timestamp}.csv`);
+  
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
